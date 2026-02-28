@@ -700,9 +700,9 @@ const RenderEngine = {
         <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg);">
             <div class="stat-card" style="width:100%; max-width:400px; padding:40px; text-align:center; border:1px solid var(--border);">
                 <div style="margin-bottom:30px;">
-                    <i class="fas fa-microchip fa-3x" style="color:var(--primary); margin-bottom:15px;"></i>
-                    <h1 style="margin:0;">MOP Project Control</h1>
-                    <p style="color:var(--text-muted);">Inicie sesión para continuar</p>
+                    <img src="assets/logo.png" alt="Edepe" style="max-width:180px; height:auto; margin-bottom:10px;">
+                    <p style="color:var(--text-muted); font-size:0.9rem; font-weight:500;">El gestor de contratos MOP</p>
+                    <p style="color:var(--text-muted); margin-top:20px;">Inicie sesión para continuar</p>
                 </div>
                 <form id="login-form" class="mop-form">
                     <div style="text-align:left; margin-bottom:15px;">
