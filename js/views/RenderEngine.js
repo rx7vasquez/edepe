@@ -603,7 +603,7 @@ const RenderEngine = {
     },
 
 
-    'project-form'() {
+    'project-form'(clients) {
         return `
         <div class="view active">
             <div class="view-header"><button class="btn-text" id="btn-back-projects"><i class="fas fa-arrow-left"></i> Cancelar</button><h1>Configuración de Nuevo Proyecto</h1></div>
@@ -611,14 +611,24 @@ const RenderEngine = {
                 <div class="mop-form-grid">
                     <div class="full-width"><label>Nombre Obra</label><input type="text" name="name" placeholder="Ej: Mejoramiento Ruta X" required></div>
                     <div><label>Contrato ID / MP</label><input type="text" name="contractId" placeholder="Ej: 1234-56-LP23" required></div>
-                    <div><label>Mandante</label><input type="text" name="client" placeholder="MOP - Vialidad" required></div>
+                    <div>
+                        <label>Mandante</label>
+                        <select name="client" required>
+                            ${clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
                     <div><label>SAFI</label><input type="text" name="codigoSafi"></div>
                     <div><label>BIP</label><input type="text" name="codigoBip"></div>
                     <div><label>Adjudicación</label><input type="date" name="awardDate" required></div>
                     <div><label>Inicio de Obra</label><input type="date" name="startDate" required></div>
                     <div><label>Plazo (Días)</label><input type="number" name="term" value="365" required></div>
                     <div class="full-width"><label>Moneda del Contrato</label>
-                        <select name="currency" onchange="document.getElementById('form-new-reajuste-container').style.display = this.value === 'UF' ? 'none' : 'block'">
+                        <select name="currency" onchange="
+                            const isUf = this.value === 'UF';
+                            document.getElementById('form-new-reajuste-sys').style.display = isUf ? 'none' : 'block';
+                            if(isUf) document.getElementById('project-tipo-reajuste-select').value = 'Ninguno';
+                            document.getElementById('project-tipo-reajuste-select').dispatchEvent(new Event('change'));
+                        ">
                             <option value="CLP">Pesos Chilenos (CLP)</option>
                             <option value="UF">Unidad de Fomento (UF)</option>
                         </select>
@@ -626,7 +636,52 @@ const RenderEngine = {
                     <div><label>Retención (0.10)</label><input type="number" step="0.01" name="retentionRate" value="0.10"></div>
                     <div><label>Límite Retención (0.05)</label><input type="number" step="0.01" name="retentionCapRate" value="0.05"></div>
                     <div><label>Anticipo ($)</label><input type="number" name="advanceTotal" value="0"></div>
-                    <div id="form-new-reajuste-container"><label>Índice Reajuste</label><input type="number" step="0.001" name="reajusteIndex" value="1.05"></div>
+                    
+                    <div id="form-new-reajuste-sys" class="full-width" style="margin-bottom:10px;">
+                        <label>Sistema de Reajuste</label>
+                        <select name="tipoReajuste" id="project-tipo-reajuste-select" onchange="
+                            const v = this.value;
+                            document.getElementById('form-new-reajuste-mop').style.display = v === 'Polinomio' ? 'flex' : 'none';
+                            document.getElementById('form-new-reajuste-ipc').style.display = v === 'IPC' ? 'flex' : 'none';
+                        ">
+                            <option value="Polinomio">Reajuste Polinómico (MOP)</option>
+                            <option value="IPC">Reajuste por IPC (INE)</option>
+                            <option value="Ninguno">Sin Reajuste</option>
+                        </select>
+                    </div>
+
+                    <!-- MOP Polinomio Container -->
+                    <div id="form-new-reajuste-mop" class="full-width" style="display:flex; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
+                        <h4 style="width:100%; margin:0 0 10px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                        <div style="flex:1; min-width:200px;">
+                            <label>Tipo de Obra</label>
+                            <select name="tipo_obra" id="project-tipo-reajuste">
+                                <option value="Infraestructura vial y portuaria">Infraestructura vial y portuaria</option>
+                                <option value="Infraestructura Hidráulica">Infraestructura Hidráulica</option>
+                                <option value="Infraestructura aeroportuaria">Infraestructura aeroportuaria</option>
+                                <option value="Edificación Pública">Edificación Pública</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label>Subtipo de Obra</label>
+                            <select name="subtipo_obra" id="project-subtipo-reajuste">
+                                <option value="General">General</option>
+                                <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
+                <div style="flex:1; min-width:150px;">
+                            <label>Índice Mes Presupuesto (Base)</label>
+                            <input type="number" step="0.0001" name="reajusteIndex" value="100.0000" required>
+                        </div>
+                    </div>
+
+                    <!-- IPC Container -->
+                    <div id="form-new-reajuste-ipc" class="full-width" style="display:none; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
+                        <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
+                        <div style="flex:1; min-width:150px;">
+                            <label>Índice Mes Presupuesto (Base IPC Points)</label>
+                            <input type="number" step="0.0001" name="reajusteIndex" value="100.0000">
+                        </div>
+                    </div>
+
                     <div class="full-width"><label>Tipo de Contrato</label>
                         <select name="contractType">
                             <option value="Precios Unitarios">Precios Unitarios</option>
@@ -868,6 +923,157 @@ const RenderEngine = {
         </form>`;
     },
 
+    'mantenedor-reajuste'({ polinomioIndices = [], ipcIndices = [], activeTab = 'polinomio', isSyncingMop = false, isSyncingIpc = false } = {}) {
+
+        // ---- Tabla Polinomio ----
+        const mopRowsHtml = polinomioIndices.length > 0 ? polinomioIndices.map(i => `
+            <tr>
+                <td style="text-align:center;">${i.id}</td>
+                <td style="text-align:center; font-weight:bold;">${i.anio}</td>
+                <td style="text-align:center;">${String(i.mes).padStart(2, '0')}</td>
+                <td>
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--text-main);">${i.tipo_obra || 'General'}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">${i.subtipo_obra || 'General'}</div>
+                </td>
+                <td style="text-align:right; color:var(--primary); font-weight:bold;">${i.indice ? i.indice.toFixed(2) : '0.00'}</td>
+                <td style="text-align:center;">
+                    <button class="btn-icon btn-edit-indice" data-id="${i.id}" title="Editar"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `).join('') : `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No hay índices registrados. Haga clic en Sincronizar MOP.</td></tr>`;
+
+        // ---- Tabla IPC ----
+        const ipcRowsHtml = ipcIndices.length > 0 ? ipcIndices.map(i => `
+            <tr>
+                <td style="text-align:center;">${i.id}</td>
+                <td style="text-align:center; font-weight:bold;">${i.anio}</td>
+                <td style="text-align:center;">${String(i.mes).padStart(2, '0')}</td>
+                <td style="text-align:right; color:var(--primary); font-weight:bold;">${i.valor ? i.valor.toFixed(2) : '0.00'}</td>
+                <td style="text-align:center;">
+                    <button class="btn-icon btn-edit-ipc" data-id="${i.id}" title="Editar"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `).join('') : `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No hay índices IPC registrados. Haga clic en Sincronizar INE.</td></tr>`;
+
+        const tabStyle = (tab) => `
+            padding: 8px 20px; border:none; cursor:pointer; font-weight:600; font-size:0.9rem; border-radius:8px 8px 0 0; transition:all 0.2s;
+            background: ${activeTab === tab ? 'var(--primary)' : 'transparent'};
+            color: ${activeTab === tab ? 'white' : 'var(--text-muted)'};
+        `;
+
+        return `
+        <div class="view active">
+            <div class="view-header" style="flex-wrap:wrap; gap:20px;">
+                <div>
+                    <h1>Mantenedor de Reajustes</h1>
+                    <p style="color:var(--text-muted);">Índices históricos para el cálculo de reajustabilidad de contratos MOP</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div style="display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:20px;">
+                <button id="tab-polinomio" style="${tabStyle('polinomio')}" onclick="App.setReajusteTab('polinomio')">
+                    <i class="fas fa-chart-line"></i> Polinómico MOP
+                </button>
+                <button id="tab-ipc" style="${tabStyle('ipc')}" onclick="App.setReajusteTab('ipc')">
+                    <i class="fas fa-chart-pie"></i> IPC
+                </button>
+            </div>
+
+            <!-- Panel Polinomio -->
+            <div id="panel-polinomio" style="display:${activeTab === 'polinomio' ? 'block' : 'none'}">
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+                    <button class="btn-primary" id="btn-sync-mop" ${isSyncingMop ? 'disabled' : ''} style="background:var(--danger);">
+                        ${isSyncingMop ? '<i class="fas fa-spinner fa-spin"></i> Sincronizando...' : '<i class="fas fa-cloud-download-alt"></i> Sincronizar MOP'}
+                    </button>
+                    <button class="btn-primary" id="btn-add-indice"><i class="fas fa-plus"></i> Nuevo Manual</button>
+                </div>
+                <div class="table-container" style="max-height:55vh; overflow-y:auto;">
+                    <table class="mop-table">
+                        <thead><tr>
+                            <th style="text-align:center; width:60px;">ID</th>
+                            <th style="text-align:center;">Año</th>
+                            <th style="text-align:center;">Mes</th>
+                            <th>Tipo / Subtipo</th>
+                            <th style="text-align:right;">Índice Base</th>
+                            <th style="text-align:center; width:80px;">Acción</th>
+                        </tr></thead>
+                        <tbody>${mopRowsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Panel IPC -->
+            <div id="panel-ipc" style="display:${activeTab === 'ipc' ? 'block' : 'none'}">
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+                    <button class="btn-primary" id="btn-sync-ipc" ${isSyncingIpc ? 'disabled' : ''} style="background:var(--danger);">
+                        ${isSyncingIpc ? '<i class="fas fa-spinner fa-spin"></i> Sincronizando...' : '<i class="fas fa-cloud-download-alt"></i> Sincronizar MOP'}
+                    </button>
+                    <button class="btn-primary" id="btn-add-ipc"><i class="fas fa-plus"></i> Nuevo Manual</button>
+                </div>
+                <div class="table-container" style="max-height:55vh; overflow-y:auto;">
+                    <table class="mop-table">
+                        <thead><tr>
+                            <th style="text-align:center; width:60px;">ID</th>
+                            <th style="text-align:center;">Año</th>
+                            <th style="text-align:center;">Mes</th>
+                            <th style="text-align:right;">Valor Índice (Puntos)</th>
+                            <th style="text-align:center; width:80px;">Acción</th>
+                        </tr></thead>
+                        <tbody>${ipcRowsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+    },
+
+    'mantenedor-ipc'(indices = [], isLoading = false) {
+        const rowsHtml = indices.length > 0 ? indices.map(i => `
+            <tr>
+                <td style="text-align:center;">${i.id}</td>
+                <td style="text-align:center; font-weight:bold;">${i.anio}</td>
+                <td style="text-align:center;">${String(i.mes).padStart(2, '0')}</td>
+                <td style="text-align:right; color:var(--primary); font-weight:bold;">${i.valor ? i.valor.toFixed(2) : '0.00'}</td>
+                <td style="text-align:center;">
+                    <button class="btn-icon btn-edit-ipc" data-id="${i.id}" title="Editar Manualmente"><i class="fas fa-edit"></i></button>
+                </td>
+            </tr>
+        `).join('') : `<tr><td colspan="5" style="text-align:center; padding:20px;">No hay índices IPC registrados. Haga clic en Sincronizar.</td></tr>`;
+
+        return `
+        <div class="view active">
+            <div class="view-header" style="flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h1>Mantenedor de Índices (IPC)</h1>
+                    <p style="color:var(--text-muted);">Administre la serie histórica del Índice de Precios al Consumidor (Base 2023=100)</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-primary" id="btn-sync-ipc" ${isLoading ? 'disabled' : ''} style="background:var(--danger);">
+                        ${isLoading ? '<i class="fas fa-spinner fa-spin"></i> Sincronizando...' : '<i class="fas fa-cloud-download-alt"></i> Sincronizar INE'}
+                    </button>
+                    <button class="btn-primary" id="btn-add-ipc"><i class="fas fa-plus"></i> Nuevo Manual</button>
+                </div>
+            </div>
+
+            <div class="table-container" style="max-height: 60vh; overflow-y: auto;">
+                <table class="mop-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; width:60px;">ID</th>
+                            <th style="text-align:center;">Año</th>
+                            <th style="text-align:center;">Mes</th>
+                            <th style="text-align:right;">Valor Índice (Puntos)</th>
+                            <th style="text-align:center; width:80px;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    },
+
     'assign-projects'(user, projects) {
         return `
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
@@ -940,21 +1146,79 @@ const RenderEngine = {
             </form>`;
     },
 
-    'edit-project-form'(p) {
+    'indice-mop-form'(data = {}) {
+        return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>${data.id ? 'Editar' : 'Nuevo'} Índice MOP Manual</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
+        <form id="indice-mop-form" class="mop-form">
+                ${data.id ? `<input type="hidden" name="id" value="${data.id}">` : ''}
+                <div class="mop-form-grid">
+                    <div><label>Año</label><input type="number" name="anio" value="${data.anio || new Date().getFullYear()}" required min="2000" max="2050"></div>
+                    <div><label>Mes (1-12)</label><input type="number" name="mes" value="${data.mes || new Date().getMonth() + 1}" required min="1" max="12"></div>
+                    <div class="full-width"><label>Tipo de Obra</label>
+                        <select name="tipo_obra" required id="indice-mop-tipo-reajuste">
+                            <option value="Infraestructura vial y portuaria" ${data.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
+                            <option value="Infraestructura Hidráulica" ${data.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
+                            <option value="Infraestructura aeroportuaria" ${data.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
+                            <option value="Edificación Pública" ${data.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
+                        </select>
+                    </div>
+                    <div class="full-width"><label>Subtipo de Obra</label>
+                        <select name="subtipo_obra" required id="indice-mop-subtipo-reajuste">
+                            <option value="${data.subtipo_obra || 'General'}">${data.subtipo_obra || 'General'}</option>
+                        </select>
+                    </div>
+                    <div><label>Índice Base</label><input type="number" step="0.0001" name="indice" value="${data.indice || ''}" required placeholder="Ej: 100.0000"></div>
+                </div>
+                <div style="background:rgba(255,152,0,0.1); padding:10px; border-radius:5px; margin-top:15px; font-size:0.8rem; color:var(--accent);">
+                    <i class="fas fa-exclamation-triangle"></i> Evite editar índices históricos si estos ya han sido utilizados en Estados de Pago aprobados.
+                </div>
+                <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">${data.id ? 'Actualizar Índice' : 'Guardar Nuevo Índice'}</button>
+            </form>`;
+    },
+
+    'indice-ipc-form'(data = {}) {
+        return `
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>${data.id ? 'Editar' : 'Nuevo'} Índice IPC Manual</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
+            <form id="indice-ipc-form" class="mop-form">
+                ${data.id ? `<input type="hidden" name="id" value="${data.id}">` : ''}
+                <div class="mop-form-grid">
+                    <div><label>Año</label><input type="number" name="anio" value="${data.anio || new Date().getFullYear()}" required min="2000" max="2050"></div>
+                    <div><label>Mes (1-12)</label><input type="number" name="mes" value="${data.mes || new Date().getMonth() + 1}" required min="1" max="12"></div>
+                    <div><label>Valor Índice (Puntos)</label><input type="number" step="0.01" name="valor" value="${data.valor || ''}" required placeholder="Ej: 104.5"></div>
+                    <div><label>Var. Mensual (%)</label><input type="number" step="0.1" name="variacion_mensual" value="${data.variacion_mensual || ''}" placeholder="Ej: 0.4"></div>
+                </div>
+                <div style="background:rgba(255,152,0,0.1); padding:10px; border-radius:5px; margin-top:15px; font-size:0.8rem; color:var(--accent);">
+                    <i class="fas fa-exclamation-triangle"></i> Evite editar índices históricos si estos ya han sido utilizados en Estados de Pago aprobados.
+                </div>
+                <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">${data.id ? 'Actualizar Índice' : 'Guardar Nuevo Índice'}</button>
+            </form>`;
+    },
+
+    'edit-project-form'(p, clients) {
         return `
                 <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>Editar Contrato</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
                 <form id="edit-project-form" class="mop-form">
                     <div class="mop-form-grid">
                         <div class="full-width"><label>Nombre Obra</label><input type="text" name="name" value="${p.name}" required></div>
                         <div><label>Contrato ID</label><input type="text" name="contractId" value="${p.contractId}" required></div>
-                        <div><label>Mandante</label><input type="text" name="client" value="${p.client}" required></div>
+                        <div>
+                            <label>Mandante</label>
+                            <select name="client" required>
+                                ${clients.map(c => `<option value="${c.name}" ${p.client === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+                        </div>
                         <div><label>SAFI</label><input type="text" name="codigoSafi" value="${p.codigoSafi || ''}"></div>
                         <div><label>BIP</label><input type="text" name="codigoBip" value="${p.codigoBip || ''}"></div>
                         <div><label>Adjudicación</label><input type="date" name="awardDate" value="${p.awardDate}" required></div>
                         <div><label>Inicio de Obra</label><input type="date" name="startDate" value="${p.startDate}" required></div>
                         <div><label>Plazo</label><input type="number" name="term" value="${p.term}" required></div>
                         <div class="full-width"><label>Moneda del Contrato</label>
-                        <select name="currency" onchange="document.getElementById('form-edit-reajuste-container').style.display = this.value === 'UF' ? 'none' : 'block'">
+                        <select name="currency" onchange="
+                            const isUf = this.value === 'UF';
+                            document.getElementById('form-edit-reajuste-sys').style.display = isUf ? 'none' : 'block';
+                            if(isUf) document.getElementById('edit-project-tipo-reajuste-select').value = 'Ninguno';
+                            document.getElementById('edit-project-tipo-reajuste-select').dispatchEvent(new Event('change'));
+                        ">
                             <option value="CLP" ${p.currency === 'CLP' ? 'selected' : ''}>Pesos Chilenos (CLP)</option>
                             <option value="UF" ${p.currency === 'UF' ? 'selected' : ''}>Unidad de Fomento (UF)</option>
                         </select>
@@ -962,7 +1226,49 @@ const RenderEngine = {
                         <div><label>Retención</label><input type="number" step="0.01" name="retentionRate" value="${p.annexes.retentionRate}"></div>
                         <div><label>Límite Retención</label><input type="number" step="0.01" name="retentionCapRate" value="${p.annexes.retentionCapRate || 0.05}"></div>
                         <div><label>Anticipo</label><input type="number" name="advanceTotal" value="${p.annexes.advanceTotal}"></div>
-                        <div id="form-edit-reajuste-container" style="display: ${p.currency === 'UF' ? 'none' : 'block'};"><label>Reajuste</label><input type="number" step="0.001" name="reajusteIndex" value="${p.annexes.reajusteIndex}"></div>
+                        
+                        <div id="form-edit-reajuste-sys" class="full-width" style="display: ${p.currency === 'UF' ? 'none' : 'block'}; margin-bottom:10px;">
+                            <label>Sistema de Reajuste</label>
+                            <select name="tipoReajuste" id="edit-project-tipo-reajuste-select" onchange="
+                                const v = this.value;
+                                document.getElementById('form-edit-reajuste-mop').style.display = v === 'Polinomio' ? 'flex' : 'none';
+                                document.getElementById('form-edit-reajuste-ipc').style.display = v === 'IPC' ? 'flex' : 'none';
+                            ">
+                                <option value="Polinomio" ${(p.annexes.tipoReajuste || 'Polinomio') === 'Polinomio' ? 'selected' : ''}>Reajuste Polinómico (MOP)</option>
+                                <option value="IPC" ${p.annexes.tipoReajuste === 'IPC' ? 'selected' : ''}>Reajuste por IPC (INE)</option>
+                                <option value="Ninguno" ${p.annexes.tipoReajuste === 'Ninguno' ? 'selected' : ''}>Sin Reajuste</option>
+                            </select>
+                        </div>
+
+                        <!-- MOP Polinomio Container -->
+                        <div id="form-edit-reajuste-mop" class="full-width" style="display: ${(p.annexes.tipoReajuste || 'Polinomio') === 'Polinomio' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
+                            <h4 style="width:100%; margin:0 0 10px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                            <div style="flex:1; min-width:200px;">
+                                <label>Tipo de Obra</label>
+                                <select name="tipo_obra" required id="project-tipo-reajuste">
+                                    <option value="Infraestructura vial y portuaria" ${p.annexes.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
+                                    <option value="Infraestructura Hidráulica" ${p.annexes.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
+                                    <option value="Infraestructura aeroportuaria" ${p.annexes.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
+                                    <option value="Edificación Pública" ${p.annexes.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
+                                </select>
+                            </div>
+                            <div style="flex:1; min-width:200px;">
+                                <label>Subtipo de Obra</label>
+                                <select name="subtipo_obra" required id="project-subtipo-reajuste">
+                                    <option value="${p.annexes.subtipo_obra || 'General'}">${p.annexes.subtipo_obra || 'General'}</option>
+                                </select>
+                            </div>
+                            </div>
+                        </div>
+
+                        <!-- IPC Container -->
+                        <div id="form-edit-reajuste-ipc" class="full-width" style="display: ${p.annexes.tipoReajuste === 'IPC' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
+                            <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
+                            <div style="flex:1; min-width:150px;">
+                                <label>Índice Mes Presupuesto (Base IPC Points)</label>
+                                <input type="number" step="0.0001" name="reajusteIndex" value="${p.annexes.reajusteIndex || 100.0000}">
+                            </div>
+                        </div>
                         <div class="full-width"><label>Tipo</label><select name="contractType">
                             <option value="Precios Unitarios" ${p.contractType === 'Precios Unitarios' ? 'selected' : ''}>Precios Unitarios</option>
                             <option value="Suma Alzada" ${p.contractType === 'Suma Alzada' ? 'selected' : ''}>Suma Alzada</option>
@@ -1328,6 +1634,48 @@ const RenderEngine = {
                 <input type="date" name="modDate" value="${new Date().toISOString().split('T')[0]}" required>
             </div>
             <button type="submit" class="btn-primary full-width" style="justify-content:center;">Registrar Modificación MO-${String(nextNumber).padStart(2, '0')}</button>
+        </form>`;
+    },
+
+    'indice-form'(i = {}) {
+        return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h2>${i.id ? 'Editar' : 'Nuevo'} Índice de Reajuste</h2>
+            <button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="indice-form" class="mop-form">
+            <input type="hidden" name="id" value="${i.id || ''}">
+            <div class="mop-form-grid">
+                <div>
+                    <label>Año</label>
+                    <input type="number" name="anio" value="${i.anio || new Date().getFullYear()}" required min="1900" max="2100" ${i.id ? 'readonly style="opacity:0.7"' : ''}>
+                </div>
+                <div>
+                    <label>Mes</label>
+                    <input type="number" name="mes" value="${i.mes || new Date().getMonth() + 1}" required min="1" max="12" ${i.id ? 'readonly style="opacity:0.7"' : ''}>
+                </div>
+                <div class="full-width">
+                    <label>Tipo de Obra</label>
+                    <select name="tipo_obra" required id="indice-form-tipo">
+                        <option value="Infraestructura vial y portuaria" ${i.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
+                        <option value="Infraestructura Hidráulica" ${i.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
+                        <option value="Infraestructura aeroportuaria" ${i.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
+                        <option value="Edificación Pública" ${i.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Subtipo de Obra</label>
+                    <select name="subtipo_obra" required id="indice-form-subtipo">
+                        <option value="${i.subtipo_obra || 'General'}">${i.subtipo_obra || 'General'}</option>
+                        <!-- Options populated dynamically by app.js -->
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Índice Base</label>
+                    <input type="number" step="0.0001" name="indice" value="${i.indice || ''}" required placeholder="Ej: 145.2413">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">Guardar Índice</button>
         </form>`;
     }
 };

@@ -15,6 +15,14 @@ const App = {
     financialFilterMonth: 'ALL',
     financialFilterRetention: false,
 
+    // MOP Polinomio Subtypes Configuration
+    MOP_SUBTYPES: {
+        'Infraestructura vial y portuaria': ['General', 'Intensivo en mano de obra', 'Intensivo en asfalto', 'Intensivo en cemento', 'Intensivo en acero'],
+        'Infraestructura Hidráulica': ['General'],
+        'Infraestructura aeroportuaria': ['General', 'Conservación Mayor en asfalto', 'Conservación Mayor en hormigón', 'Conservaciones Rutinarias / Globales', 'Contratos en zonas aisladas'],
+        'Edificación Pública': ['General']
+    },
+
     init() {
         this.projects = StorageService.load();
         this.clients = StorageService.loadClients();
@@ -84,6 +92,13 @@ const App = {
             'projections': () => RenderEngine.projections(filteredProjects),
             'clients': () => RenderEngine.clients(this.clients),
             'usuarios': () => RenderEngine.usuarios(this.users, this.projects, this.userSearchTerm, this.userRoleFilter),
+            'mantenedor-reajuste': () => RenderEngine['mantenedor-reajuste']({
+                polinomioIndices: this.polinomioIndices || [],
+                ipcIndices: this.ipcIndices || [],
+                activeTab: this.reajusteActiveTab || 'polinomio',
+                isSyncingMop: this.isSyncingIndices,
+                isSyncingIpc: this.isSyncingIpc
+            }),
             'financial': () => RenderEngine.financial(filteredProjects, this.currentProjectId, {
                 type: this.financialFilterType,
                 year: this.financialFilterYear,
@@ -94,7 +109,14 @@ const App = {
                 const p = this.projects.find(pj => pj.id === this.currentProjectId);
                 return RenderEngine.details(p);
             },
-            'project-form': () => RenderEngine['project-form'](),
+            'project-form': () => {
+                if (!this.clients || this.clients.length === 0) {
+                    alert("Debes crear un Mandante primero en el 'Mantenedor de Mandantes' antes de configurar un nuevo proyecto.");
+                    this.currentView = 'proyectos';
+                    return RenderEngine.proyectos(filteredProjects);
+                }
+                return RenderEngine['project-form'](this.clients);
+            },
             'edp-generation': () => {
                 const p = this.projects.find(pj => pj.id === this.currentProjectId);
                 return p ? RenderEngine.edpGenerationView(p) : `<div class="view active"><h1>Error: Proyecto no encontrado para facturar</h1></div>`;
@@ -111,7 +133,7 @@ const App = {
     setupEvents() {
         window.App = this;
 
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', async (e) => {
             const target = e.target.closest('button, .nav-links li, .project-card, .btn-icon, .btn-add-progress, .btn-view-history, .btn-view-edp, .user-profile, .avance-group-header');
             if (!target) return;
 
@@ -122,6 +144,26 @@ const App = {
 
             const viewAttr = target.dataset.view;
             if (viewAttr) {
+
+                if (viewAttr === 'mantenedor-reajuste') {
+                    this.currentView = viewAttr;
+                    this.reajusteActiveTab = this.reajusteActiveTab || 'polinomio';
+                    this.render();
+                    try {
+                        const [polinomio, ipc] = await Promise.all([
+                            PolinomioApiService.getAll(),
+                            IpcApiService.getAll()
+                        ]);
+                        this.polinomioIndices = polinomio;
+                        this.ipcIndices = ipc;
+                        this.render();
+                    } catch (err) {
+                        console.error("Error cargando índices:", err);
+                        alert("No se pudieron cargar los índices desde el backend.");
+                    }
+                    return;
+                }
+
                 this.currentView = viewAttr;
                 this.currentProjectId = target.dataset.projectId || null;
                 this.render();
@@ -183,8 +225,71 @@ const App = {
 
             const id = target.id;
             if (id === 'btn-back-projects') { this.currentView = 'proyectos'; this.currentProjectId = null; this.render(); return; }
+
+            if (id === 'btn-sync-mop') {
+                try {
+                    this.isSyncingIndices = true;
+                    this.render();
+
+                    const res = await PolinomioApiService.seedExcel();
+                    alert(`Sincronización MOP exitosa: Se actualizaron ${res.result.count} índices.`);
+
+                    this.polinomioIndices = await PolinomioApiService.getAll();
+                } catch (e) {
+                    console.error("Error al sincronizar MOP:", e);
+                    alert("Error al sincronizar con MOP: " + e.message);
+                } finally {
+                    this.isSyncingIndices = false;
+                    this.render();
+                }
+                return;
+            }
+
+            if (id === 'btn-sync-ipc') {
+                try {
+                    this.isSyncingIpc = true;
+                    this.render();
+
+                    const res = await IpcApiService.syncFromSource();
+                    alert(`Sincronización IPC exitosa: ${res.message}`);
+
+                    this.ipcIndices = await IpcApiService.getAll();
+                } catch (e) {
+                    console.error("Error al sincronizar IPC:", e);
+                    alert("Error al sincronizar con INE: " + e.message);
+                } finally {
+                    this.isSyncingIpc = false;
+                    this.render();
+                }
+                return;
+            }
+
             if (id === 'btn-close-modal' || target.classList.contains('btn-close-modal')) {
                 document.getElementById('global-modal').style.display = 'none';
+                return;
+            }
+
+            if (id === 'btn-add-indice') {
+                this.showModal('indice-mop-form');
+                return;
+            }
+
+            if (target.classList.contains('btn-edit-indice')) {
+                const indiceId = parseInt(target.dataset.id);
+                const indice = this.polinomioIndices.find(i => i.id === indiceId);
+                if (indice) this.showModal('indice-mop-form', indice);
+                return;
+            }
+
+            if (id === 'btn-add-ipc') {
+                this.showModal('indice-ipc-form');
+                return;
+            }
+
+            if (target.classList.contains('btn-edit-ipc')) {
+                const indiceId = parseInt(target.dataset.id);
+                const indice = this.ipcIndices.find(i => i.id === indiceId);
+                if (indice) this.showModal('indice-ipc-form', indice);
                 return;
             }
 
@@ -332,9 +437,19 @@ const App = {
             if (e.target.id === 'financial-filter-year') { this.financialFilterYear = e.target.value; this.render(); }
             if (e.target.id === 'financial-filter-month') { this.financialFilterMonth = e.target.value; this.render(); }
             if (e.target.id === 'financial-filter-retention') { this.financialFilterRetention = e.target.checked; this.render(); }
+
+            // Handle Tipo de Obra changes to populate Subtipo
+            if (e.target.id === 'indice-form-tipo' || e.target.id === 'project-tipo-reajuste') {
+                const tipo = e.target.value;
+                const subtipos = this.MOP_SUBTYPES[tipo] || ['General'];
+                const subtipoSelect = document.getElementById(e.target.id === 'indice-form-tipo' ? 'indice-form-subtipo' : 'project-subtipo-reajuste');
+                if (subtipoSelect) {
+                    subtipoSelect.innerHTML = subtipos.map(st => `<option value="${st}">${st}</option>`).join('');
+                }
+            }
         });
 
-        document.addEventListener('submit', (e) => {
+        document.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
@@ -435,10 +550,81 @@ const App = {
 
             if (e.target.id === 'assign-projects-form') {
                 const u = this.users.find(user => user.id === data.userId);
-                u.assignedProjectIds = Array.from(e.target.querySelectorAll('input[name="projectIds"]:checked')).map(i => i.value);
+                const assigned = [];
+                e.target.querySelectorAll('input[name="projects"]:checked').forEach(cb => assigned.push(cb.value));
+                u.assignedProjects = assigned;
                 StorageService.saveUsers(this.users);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
+            }
+
+            if (e.target.id === 'indice-mop-form') {
+                try {
+                    const btn = e.target.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                    const payload = {
+                        anio: parseInt(data.anio),
+                        mes: parseInt(data.mes),
+                        tipo_obra: data.tipo_obra,
+                        subtipo_obra: data.subtipo_obra,
+                        indice: parseFloat(data.indice)
+                    };
+
+                    if (data.id) {
+                        await PolinomioApiService.update(data.id, payload);
+                    } else {
+                        await PolinomioApiService.create(payload);
+                    }
+
+                    document.getElementById('global-modal').style.display = 'none';
+                    this.isSyncingIndices = true;
+                    this.render();
+
+                    this.polinomioIndices = await PolinomioApiService.getAll();
+                } catch (err) {
+                    console.error("Error guardando índice MOP:", err);
+                    alert("Error: " + err.message);
+                } finally {
+                    this.isSyncingIndices = false;
+                    this.render();
+                }
+                return;
+            }
+
+            if (e.target.id === 'indice-ipc-form') {
+                try {
+                    const btn = e.target.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                    const payload = {
+                        anio: parseInt(data.anio),
+                        mes: parseInt(data.mes),
+                        valor: parseFloat(data.valor),
+                        variacion_mensual: data.variacion_mensual ? parseFloat(data.variacion_mensual) : null
+                    };
+
+                    if (data.id) {
+                        await IpcApiService.update(data.id, payload);
+                    } else {
+                        await IpcApiService.create(payload);
+                    }
+
+                    document.getElementById('global-modal').style.display = 'none';
+                    this.isSyncingIpc = true;
+                    this.render();
+
+                    this.ipcIndices = await IpcApiService.getAll();
+                } catch (err) {
+                    console.error("Error guardando índice IPC:", err);
+                    alert("Error: " + err.message);
+                } finally {
+                    this.isSyncingIpc = false;
+                    this.render();
+                }
+                return;
             }
 
             if (e.target.id === 'project-form') {
@@ -446,7 +632,10 @@ const App = {
                 newProject.annexes.retentionRate = parseFloat(data.retentionRate) || 0.1;
                 newProject.annexes.retentionCapRate = parseFloat(data.retentionCapRate) || 0.05;
                 newProject.annexes.advanceTotal = parseFloat(data.advanceTotal) || 0;
-                newProject.annexes.reajusteIndex = data.currency === 'UF' ? 1.0 : (parseFloat(data.reajusteIndex) || 1.05);
+                newProject.annexes.reajusteIndex = parseFloat(data.reajusteIndex) || 100.0000;
+                newProject.annexes.tipoReajuste = data.currency === 'UF' ? 'Ninguno' : (data.tipoReajuste || 'Polinomio');
+                newProject.annexes.tipo_obra = data.tipo_obra || 'Edificación Pública';
+                newProject.annexes.subtipo_obra = data.subtipo_obra || 'General';
                 this.projects.push(newProject);
                 StorageService.save(this.projects);
                 this.currentView = 'proyectos';
@@ -456,10 +645,13 @@ const App = {
             if (e.target.id === 'edit-project-form') {
                 const p = this.projects.find(pj => pj.id === this.currentProjectId);
                 Object.assign(p, data);
-                // Ensure annexes are updated with retention rates
+                // Ensure annexes are updated with retention rates and polinomios
                 p.annexes.retentionRate = parseFloat(data.retentionRate);
                 p.annexes.retentionCapRate = parseFloat(data.retentionCapRate);
-                p.annexes.reajusteIndex = data.currency === 'UF' ? 1.0 : (parseFloat(data.reajusteIndex) || 1.05);
+                p.annexes.reajusteIndex = parseFloat(data.reajusteIndex) || 100.0000;
+                p.annexes.tipoReajuste = data.currency === 'UF' ? 'Ninguno' : (data.tipoReajuste || p.annexes.tipoReajuste || 'Polinomio');
+                p.annexes.tipo_obra = data.tipo_obra || p.annexes.tipo_obra;
+                p.annexes.subtipo_obra = data.subtipo_obra || p.annexes.subtipo_obra;
                 StorageService.save(this.projects);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
@@ -545,7 +737,7 @@ const App = {
                 let val = 0;
                 let ret = 0;
                 let items = [];
-                const r = parseFloat(data.reajuste) || 0;
+                let r = 0; // Se calculará abajo si aplica
 
                 if (type === 'Avance de Obra') {
                     for (const [k, v] of Object.entries(data)) {
@@ -558,7 +750,88 @@ const App = {
                             }
                         }
                     }
-                    if (val === 0 && r === 0) return alert("No hay montos para generar el EDP.");
+                    if (val === 0) {
+                        alert("No hay montos físicos para generar el EDP de Avance.");
+                        return;
+                    }
+
+                    // ====== CÁLCULO DE REAJUSTE ======
+                    const tipoReajuste = p.currency === 'UF' ? 'Ninguno' : (p.annexes.tipoReajuste || 'Polinomio');
+                    const edpDate = new Date(data.date || new Date());
+                    const edpMes = edpDate.getMonth() + 1;
+                    const edpAnio = edpDate.getFullYear();
+
+                    if (tipoReajuste === 'Ninguno') {
+                        r = 0; // No hay reajuste
+                    } else if (tipoReajuste === 'IPC') {
+                        let btnSubmit = null;
+                        try {
+                            btnSubmit = e.target.querySelector('button[type="submit"]');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = true;
+                                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando Índice IPC...';
+                            }
+
+                            const indiceData = await IpcApiService.getExactIndex(edpMes, edpAnio);
+
+                            if (!indiceData) {
+                                throw new Error(`El índice IPC para [Mes ${edpMes} - Año ${edpAnio}] no está en la BBDD. Sincronice con INE en "Mantenedor IPC".`);
+                            }
+
+                            const baseIndice = parseFloat(p.annexes.reajusteIndex || 100);
+                            const factorVariacion = Math.max(0, (indiceData.valor - baseIndice) / baseIndice);
+                            r = val * factorVariacion;
+                        } catch (err) {
+                            alert(err.message);
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.textContent = 'Generar Estado de Pago';
+                            }
+                            return; // ABORT CREATION
+                        } finally {
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = 'Generar Estado de Pago';
+                            }
+                        }
+                    } else if (tipoReajuste === 'Polinomio') {
+                        let btnSubmit = null;
+                        try {
+                            btnSubmit = e.target.querySelector('button[type="submit"]');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = true;
+                                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando Índice MOP...';
+                            }
+
+                            const tipoObra = p.annexes.tipo_obra || 'Edificación Pública';
+                            const subtipoObra = p.annexes.subtipo_obra || 'General';
+
+                            const indiceData = await PolinomioApiService.getExactIndex(edpMes, edpAnio, tipoObra, subtipoObra);
+
+                            if (!indiceData) {
+                                throw new Error(`El índice MOP de reajuste para [Mes ${edpMes} - Año ${edpAnio}] Tipo [${tipoObra} - ${subtipoObra}] no está tabulado en la BBDD Histórica. Solicite a un administrador que lo agregue desde "Mantenedor Reajustes" o sincronice con el Excel.`);
+                            }
+
+                            // Factor MOP simplificado = Indice Mes Cobro / Indice Mes Presupuesto
+                            const baseIndice = parseFloat(p.annexes.reajusteIndex || 100);
+                            const factorVariacion = Math.max(0, (indiceData.indice - baseIndice) / baseIndice);
+                            r = val * factorVariacion; // Reajuste
+
+                        } catch (err) {
+                            alert(err.message);
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.textContent = 'Generar Estado de Pago';
+                            }
+                            return; // ABORT CREATION
+                        } finally {
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = 'Generar Estado de Pago';
+                            }
+                        }
+                    }
+                    // ===================================
 
                     // Retention logic with cap
                     const accRet = p.getAccumulatedRetention();
@@ -780,7 +1053,7 @@ const App = {
                 </form>`;
             },
             'edit-item': () => RenderEngine['edit-item-form'](data.item, data.advancedQty, data.project),
-            'edit-project': () => RenderEngine['edit-project-form'](this.projects.find(pj => pj.id === this.currentProjectId)),
+            'edit-project': () => RenderEngine['edit-project-form'](this.projects.find(pj => pj.id === this.currentProjectId), this.clients),
             'progress-history': () => {
                 const history = data.project.progressEntries.filter(e => e.itemId === data.item.id).sort((a, b) => new Date(b.date) - new Date(a.date));
                 return `
@@ -793,7 +1066,8 @@ const App = {
                         <tbody>${history.map(h => `<tr><td>${new Date(h.date).toLocaleString('es-CL')}</td><td>${h.quantity}</td><td style="color:var(--text-muted); font-size:0.85rem;"><i class="fas fa-user" style="margin-right:4px;"></i>${h.registeredBy || '—'}</td></tr>`).join('') || '<tr><td colspan="3">No hay registros</td></tr>'}</tbody>
                     </table>`;
             },
-            'edp-detail': () => RenderEngine['edp-detail-modal'](data.project, data.edp)
+            'edp-detail': () => RenderEngine['edp-detail-modal'](data.project, data.edp),
+            'indice-form': () => RenderEngine['indice-form'](data)
         };
 
         if (templates[type]) {
@@ -803,6 +1077,11 @@ const App = {
             const mc = m.querySelector('.modal-content');
             if (mc) mc.classList.toggle('modal-wide', type === 'edp-detail');
         }
+    },
+
+    setReajusteTab(tab) {
+        this.reajusteActiveTab = tab;
+        this.render();
     }
 };
 

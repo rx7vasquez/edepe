@@ -1,84 +1,20 @@
-# Logs
-logs
+# Dependencias Node
+node_modules/
+backend/node_modules/
+
+# Base de datos (NO subir a git — es un archivo local de producción)
+backend/db/*.sqlite
+backend/db/*.db
+
+# Variables de entorno con secretos
+.env
+backend/.env
+
+# Archivos temporales / debug
+backend/test_ipc.js
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory
-coverage
-*.lcov
-.nyc_output
-
-# Environment Variables & Secrets
-.env
-.env.test
-.env.production
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.pem
-*.key
-*.cert
-*.crt
-# Supabase / Firebase / Cloud Secrets
-firebase.json
-supabase/functions/.env
-
-# Dependencies (Node.js backend)
-node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Build & Compilation directories
-dist/
-build/
-out/
-.next/
-.serverless/
-.netlify/
-.vercel/
-*.tsbuildinfo
-
-# SQLite databases & Local JSON data
-*.db
-*.sqlite
-*.sqlite3
-data/*.json
-
-# IDEs and Editors
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.prettierignore
-
-# OS specific files
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-
-# Caches
-.npm
-.eslintcache
-.stylelintcache
-.cache
