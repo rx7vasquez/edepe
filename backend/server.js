@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const { initDb } = require('./db/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,8 +32,11 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message || 'Error interno del servidor' });
 });
 
-// Inicialización del servidor
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor Edepé corriendo en http://localhost:${PORT}`);
-    console.log(`   → Acceso en la red local: http://<IP-del-servidor>:${PORT}`);
-});
+// Inicialización asíncrona (necesaria para el modo PostgreSQL)
+(async () => {
+    await initDb();
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Servidor Edepé corriendo en http://localhost:${PORT}`);
+        console.log(`   → Acceso en la red local: http://<IP-del-servidor>:${PORT}`);
+    });
+})();

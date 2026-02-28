@@ -1,69 +1,63 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/database');
+const { query } = require('../db/database');
 const IPCScraperService = require('../services/IPCScraperService');
 
-// Get indices with optional filters
-router.get('/', (req, res) => {
+// GET /api/ipc
+router.get('/', async (req, res) => {
     try {
-        let query = 'SELECT * FROM IPCIndex WHERE 1=1';
+        let sql = 'SELECT * FROM IPCIndex WHERE 1=1';
         const params = [];
+        let i = 1;
 
-        if (req.query.anio) {
-            query += ' AND anio = ?';
-            params.push(parseInt(req.query.anio));
-        }
+        if (req.query.anio) { sql += ` AND anio = $${i++}`; params.push(parseInt(req.query.anio)); }
+        if (req.query.mes) { sql += ` AND mes = $${i++}`; params.push(parseInt(req.query.mes)); }
 
-        if (req.query.mes) {
-            query += ' AND mes = ?';
-            params.push(parseInt(req.query.mes));
-        }
+        sql += ' ORDER BY anio DESC, mes DESC';
 
-        query += ' ORDER BY anio DESC, mes DESC';
-
-        const stmt = db.prepare(query);
-        const records = stmt.all(...params);
-        res.json(records);
-    } catch (error) {
-        console.error('Error fetching IPC indices:', error);
-        res.status(500).json({ error: error.message });
+        const rows = await query(sql, params);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// Seed data from source
+// POST /api/ipc/seed
 router.post('/seed', async (req, res) => {
     try {
         const result = await IPCScraperService.seedDatabase();
         res.json({ success: true, message: `Se actualizaron ${result.count} índices IPC.` });
-    } catch (error) {
-        console.error('Error seeding IPC database:', error);
-        res.status(500).json({ error: error.message });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// Add new manual index
-router.post('/', (req, res) => {
-    const { anio, mes, valor, variacion_mensual } = req.body;
+// POST /api/ipc
+router.post('/', async (req, res) => {
     try {
-        const stmt = db.prepare('INSERT INTO IPCIndex (anio, mes, valor, variacion_mensual) VALUES (?, ?, ?, ?)');
-        const result = stmt.run(anio, mes, valor, variacion_mensual || null);
-        res.json({ success: true, id: result.lastInsertRowid });
-    } catch (error) {
-        console.error('Error adding manual IPC index:', error);
-        res.status(500).json({ error: error.message });
+        const { anio, mes, valor, variacion_mensual } = req.body;
+        const rows = await query(
+            `INSERT INTO IPCIndex (anio, mes, valor, variacion_mensual)
+             VALUES ($1, $2, $3, $4) RETURNING id`,
+            [anio, mes, valor, variacion_mensual || null]
+        );
+        res.json({ success: true, id: rows[0].id });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
-// Update an existing index
-router.put('/:id', (req, res) => {
-    const { valor, variacion_mensual } = req.body;
+// PUT /api/ipc/:id
+router.put('/:id', async (req, res) => {
     try {
-        const stmt = db.prepare('UPDATE IPCIndex SET valor = ?, variacion_mensual = ? WHERE id = ?');
-        stmt.run(valor, variacion_mensual || null, req.params.id);
+        const { valor, variacion_mensual } = req.body;
+        await query(
+            'UPDATE IPCIndex SET valor = $1, variacion_mensual = $2 WHERE id = $3',
+            [valor, variacion_mensual || null, req.params.id]
+        );
         res.json({ success: true });
-    } catch (error) {
-        console.error('Error updating IPC index:', error);
-        res.status(500).json({ error: error.message });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
