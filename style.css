@@ -938,3 +938,16 @@ body {
 .login-mode #loading-screen {
     z-index: 9999;
 }
+
+/* --- Login Scroll & Padding Fix --- */
+.login-page {
+    height: auto !important;
+    min-height: 100vh !important;
+    padding: 40px 20px !important;
+    overflow-y: auto !important;
+    display: flex !important;
+}
+
+.login-card {
+    margin: auto !important; /* Center accurately with flex and auto margins */
+}
