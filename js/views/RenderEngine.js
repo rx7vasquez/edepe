@@ -697,49 +697,57 @@ const RenderEngine = {
 
     login() {
         return `
-        <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg);">
-            <div class="stat-card" style="width:100%; max-width:400px; padding:40px; text-align:center; border:1px solid var(--border);">
-                <div style="margin-bottom:30px;">
-                    <img src="assets/logo.png" alt="Edepe" style="max-width:180px; height:auto; margin-bottom:10px;">
-                    <p style="color:var(--text-muted); font-size:0.9rem; font-weight:500;">El gestor de contratos MOP</p>
-                    <p style="color:var(--text-muted); margin-top:20px;">Inicie sesión para continuar</p>
+        <div class="login-page">
+            <div class="login-card">
+                <div class="login-brand">
+                    <img src="assets/logo.png" alt="Edepe">
+                    <div class="brand-slogan">El gestor de contratos MOP</div>
+                </div>
+                <div class="login-header">
+                    <h1>Bienvenido</h1>
+                    <p>Inicie sesión con su cuenta para continuar</p>
                 </div>
                 <form id="login-form" class="mop-form">
-                    <div style="text-align:left; margin-bottom:15px;">
-                        <label>Correo Electrónico</label>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
                         <input type="email" name="email" required placeholder="ejemplo@mop.cl">
                     </div>
-                    <div style="text-align:left; margin-bottom:15px;">
-                        <label>Contraseña</label>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-lock"></i> Contraseña</label>
                         <input type="password" name="password" required placeholder="••••••••">
                     </div>
-                    <div style="text-align:right; margin-bottom:20px;">
-                        <button type="button" id="btn-forgot-password" class="btn-text" style="padding:0; font-size:0.8rem; color:var(--primary);">¿Olvidó su contraseña?</button>
+                    <div class="form-footer-links">
+                        <button type="button" id="btn-forgot-password" class="login-link">¿Olvidó su contraseña?</button>
                     </div>
-                    <button type="submit" class="btn-primary full-width" style="justify-content:center;">Entrar al Sistema</button>
-                    <p id="login-error" style="color:var(--danger); margin-top:15px; display:none; font-size:0.9rem;">Credenciales incorrectas.</p>
+                    <button type="submit" class="btn-login-submit">Entrar al Sistema</button>
+                    <p id="login-error" class="login-error-msg" style="display:none;"><i class="fas fa-exclamation-circle"></i> Credenciales incorrectas.</p>
                 </form>
+            </div>
+            <div class="login-page-footer">
+                &copy; ${new Date().getFullYear()} Edepe. Todos los derechos reservados.
             </div>
         </div>`;
     },
 
     recovery() {
         return `
-        <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg);">
-            <div class="stat-card" style="width:100%; max-width:400px; padding:40px; text-align:center; border:1px solid var(--border);">
-                <div style="margin-bottom:30px;">
-                    <i class="fas fa-key fa-3x" style="color:var(--primary); margin-bottom:15px;"></i>
-                    <h1 style="margin:0;">Recuperar Acceso</h1>
-                    <p style="color:var(--text-muted);">Ingrese su correo para iniciar la recuperación</p>
+        <div class="login-page">
+            <div class="login-card">
+                <div class="login-brand">
+                    <img src="assets/logo.png" alt="Edepe">
+                </div>
+                <div class="login-header">
+                    <h1>Recuperar Acceso</h1>
+                    <p>Ingrese su correo para recibir instrucciones de recuperación</p>
                 </div>
                 <form id="recovery-form" class="mop-form">
-                    <div style="text-align:left; margin-bottom:25px;">
-                        <label>Correo Electrónico</label>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
                         <input type="email" name="email" required placeholder="ejemplo@mop.cl">
                     </div>
-                    <button type="submit" class="btn-primary full-width" style="justify-content:center;">Verificar Cuenta</button>
-                    <button type="button" id="btn-back-login" class="btn-text full-width" style="margin-top:15px;"><i class="fas fa-arrow-left"></i> Volver al Login</button>
-                    <p id="recovery-error" style="color:var(--danger); margin-top:15px; display:none; font-size:0.9rem;">El correo no está registrado en el sistema.</p>
+                    <button type="submit" class="btn-login-submit">Enviar Instrucciones</button>
+                    <button type="button" id="btn-back-login" class="btn-text-login full-width"><i class="fas fa-arrow-left"></i> Volver al Login</button>
+                    <p id="recovery-error" class="login-error-msg" style="display:none;"><i class="fas fa-exclamation-circle"></i> Correo no encontrado.</p>
                 </form>
             </div>
         </div>`;
@@ -747,25 +755,27 @@ const RenderEngine = {
 
     reset(email) {
         return `
-        <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg);">
-            <div class="stat-card" style="width:100%; max-width:400px; padding:40px; text-align:center; border:1px solid var(--border);">
-                <div style="margin-bottom:30px;">
-                    <i class="fas fa-shield-alt fa-3x" style="color:var(--primary); margin-bottom:15px;"></i>
-                    <h1 style="margin:0;">Nueva Contraseña</h1>
-                    <p style="color:var(--text-muted);">Cuenta verificada: <b>${email}</b></p>
+        <div class="login-page">
+            <div class="login-card">
+                <div class="login-brand">
+                    <img src="assets/logo.png" alt="Edepe">
+                </div>
+                <div class="login-header">
+                    <h1>Nueva Contraseña</h1>
+                    <p>Establezca su nueva contraseña para <strong>${email}</strong></p>
                 </div>
                 <form id="reset-form" class="mop-form">
                     <input type="hidden" name="email" value="${email}">
-                    <div style="text-align:left; margin-bottom:15px;">
-                        <label>Contraseña Nueva</label>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-lock"></i> Nueva Contraseña</label>
                         <input type="password" name="password" required placeholder="••••••••" autofocus>
                     </div>
-                    <div style="text-align:left; margin-bottom:25px;">
-                        <label>Confirmar Contraseña</label>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-shield-alt"></i> Confirmar Contraseña</label>
                         <input type="password" name="confirmPassword" required placeholder="••••••••">
                     </div>
-                    <button type="submit" class="btn-primary full-width" style="justify-content:center;">Actualizar Contraseña</button>
-                    <p id="reset-error" style="color:var(--danger); margin-top:15px; display:none; font-size:0.9rem;">Las contraseñas no coinciden.</p>
+                    <button type="submit" class="btn-login-submit">Cambiar Contraseña</button>
+                    <p id="reset-error" class="login-error-msg" style="display:none;"><i class="fas fa-exclamation-circle"></i> Las contraseñas no coinciden.</p>
                 </form>
             </div>
         </div>`;

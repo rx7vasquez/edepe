@@ -138,10 +138,12 @@
         </nav>
 
         <main class="main-content">
-            <header class="top-bar">
-                <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Buscar..."></div>
-                <div id="top-bar-user-profile" class="user-profile" style="cursor:pointer;" title="Mi Perfil">
-                    <div class="avatar">...</div>
+            <header class="top-bar" style="justify-content: flex-end; border:none; background:transparent;">
+                <!-- Search and profile button removed as per user request -->
+                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
+                    <i class="far fa-calendar-alt" style="margin-right: 6px;"></i>
+                    ${new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day:
+                    'numeric' })}
                 </div>
             </header>
             <div id="view-container" class="view-container"></div>
