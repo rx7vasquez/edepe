@@ -1,10 +1,4 @@
-[build]
-# Instalar dependencias del backend desde la carpeta backend/
-buildCommand = "cd backend && npm install"
-
 [deploy]
-# Arrancar el servidor desde la raíz del proyecto
-# __dirname en server.js será /app/backend → path.join(__dirname, '..') = /app (donde está index.html)
 startCommand = "node backend/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
