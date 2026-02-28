@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOP Project Control - Sistema de Control de Obras</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #17819C;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Direct Modal Overrides */
+        #global-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .mop-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .mop-form-grid .full-width {
+            grid-column: span 2;
+        }
+
+        #debug-console {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 280px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 9px;
+            overflow-y: auto;
+            z-index: 100000;
+            padding: 8px;
+            pointer-events: none;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+
+<body class="light-mode">
+    <div id="loading-screen" class="loading-screen">
+        <i class="fas fa-spinner fa-spin fa-3x" style="margin-bottom: 20px;"></i>
+        <span>Preparando Entorno de Control...</span>
+    </div>
+
+    <!-- The ONE and ONLY Modal -->
+    <div id="global-modal" style="padding: 20px; align-items: flex-start; overflow-y: auto;">
+        <div class="modal-content"
+            style="background:var(--bg-card); padding:25px; border-radius:12px; width:100%; margin: auto; position:relative; box-shadow: var(--shadow); border: 1px solid var(--border);">
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="debug-console"></div>
+
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo"><i class="fas fa-microchip"></i> MOP Control</div>
+            </div>
+            <div id="user-info-sidebar"
+                style="padding:0 20px 20px 20px; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:20px;">
+                <p id="current-user-name" style="font-weight:bold; margin:0; font-size:0.9rem;">Cargando...</p>
+                <p id="current-user-role" style="font-size:0.75rem; color:var(--text-muted); margin:4px 0 10px 0;">Rol
+                </p>
+                <button id="btn-logout" class="btn-text" style="padding:0; font-size:0.8rem; color:var(--accent);"><i
+                        class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-view="dashboard" id="nav-dashboard"><i class="fas fa-th-large"></i> Dashboard
+                </li>
+                <li data-view="proyectos" id="nav-proyectos"><i class="fas fa-project-diagram"></i> Proyectos</li>
+                <li data-view="avances" id="nav-avances"><i class="fas fa-tasks"></i> Avances</li>
+                <li data-view="projections" id="nav-projections"><i class="fas fa-chart-line"></i> Proyecciones</li>
+                <li data-view="financial" id="nav-financial"><i class="fas fa-file-invoice-dollar"></i> Estados de Pago
+                </li>
+                <li data-view="clients" id="nav-clients"><i class="fas fa-building"></i> Mandantes</li>
+                <li data-view="usuarios" id="nav-usuarios" class="admin-only" style="display:none;"><i
+                        class="fas fa-users"></i> Usuarios</li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Buscar..."></div>
+                <div id="top-bar-user-profile" class="user-profile" style="cursor:pointer;" title="Mi Perfil">
+                    <div class="avatar">...</div>
+                </div>
+            </header>
+            <div id="view-container" class="view-container"></div>
+        </main>
+    </div>
+
+    <script src="js/models/Project.js"></script>
+    <script src="js/models/User.js"></script>
+    <script src="js/services/StorageService.js"></script>
+    <script src="js/services/ProjectionService.js"></script>
+    <script src="js/services/AuthService.js"></script>
+    <script src="js/views/RenderEngine.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
