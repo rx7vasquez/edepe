@@ -1067,7 +1067,8 @@ const App = {
                     </table>`;
             },
             'edp-detail': () => RenderEngine['edp-detail-modal'](data.project, data.edp),
-            'indice-form': () => RenderEngine['indice-form'](data)
+            'indice-mop-form': () => RenderEngine['indice-mop-form'](data, this.MOP_SUBTYPES),
+            'indice-ipc-form': () => RenderEngine['indice-ipc-form'](data)
         };
 
         if (templates[type]) {

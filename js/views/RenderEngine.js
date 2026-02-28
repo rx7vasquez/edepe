@@ -1029,6 +1029,83 @@ const RenderEngine = {
         </div>`;
     },
 
+    'indice-mop-form'(indice = {}, mopSubtypes = {}) {
+        const isEdit = !!indice.id;
+        const currentTipo = indice.tipo_obra || Object.keys(mopSubtypes)[0];
+        const subtipos = mopSubtypes[currentTipo] || ['General'];
+
+        return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h2>${isEdit ? 'Editar Índice MOP' : 'Nuevo Índice MOP'}</h2>
+            <button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="indice-mop-form" class="mop-form">
+            ${isEdit ? `<input type="hidden" name="id" value="${indice.id}">` : ''}
+            <div class="mop-form-grid">
+                <div>
+                    <label>Año</label>
+                    <input type="number" name="anio" value="${indice.anio || new Date().getFullYear()}" required min="2000" max="2100">
+                </div>
+                <div>
+                    <label>Mes</label>
+                    <select name="mes" required>
+                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${indice.mes === m ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Tipo de Obra</label>
+                    <select id="indice-form-tipo" name="tipo_obra" required>
+                        ${Object.keys(mopSubtypes).map(t => `<option value="${t}" ${currentTipo === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Subtipo de Obra</label>
+                    <select id="indice-form-subtipo" name="subtipo_obra" required>
+                        ${subtipos.map(st => `<option value="${st}" ${indice.subtipo_obra === st ? 'selected' : ''}>${st}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Índice</label>
+                    <input type="number" step="0.01" name="indice" value="${indice.indice || ''}" required placeholder="Ej: 104.52">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary full-width" style="margin-top:20px; justify-content:center;">
+                ${isEdit ? 'Actualizar Índice' : 'Crear Índice'}
+            </button>
+        </form>`;
+    },
+
+    'indice-ipc-form'(indice = {}) {
+        const isEdit = !!indice.id;
+        return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h2>${isEdit ? 'Editar Índice IPC' : 'Nuevo Índice IPC'}</h2>
+            <button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="indice-ipc-form" class="mop-form">
+            ${isEdit ? `<input type="hidden" name="id" value="${indice.id}">` : ''}
+            <div class="mop-form-grid">
+                <div>
+                    <label>Año</label>
+                    <input type="number" name="anio" value="${indice.anio || new Date().getFullYear()}" required min="2000" max="2100">
+                </div>
+                <div>
+                    <label>Mes</label>
+                    <select name="mes" required>
+                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${indice.mes === m ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="full-width">
+                    <label>Índice (IPC)</label>
+                    <input type="number" step="0.01" name="valor" value="${indice.valor || ''}" required placeholder="Ej: 103.24">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary full-width" style="margin-top:20px; justify-content:center;">
+                ${isEdit ? 'Actualizar IPC' : 'Crear IPC'}
+            </button>
+        </form>`;
+    },
+
     'mantenedor-ipc'(indices = [], isLoading = false) {
         const rowsHtml = indices.length > 0 ? indices.map(i => `
             <tr>
