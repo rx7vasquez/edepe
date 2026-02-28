@@ -16,9 +16,17 @@ let sqliteDb = null;
 
 if (IS_POSTGRES) {
     const { Pool } = require('pg');
+    // Parsear la URL manualmente para preservar el usuario completo (postgres.PROJECT_REF)
+    // pg no soporta puntos en el usuario cuando usa la connectionString directamente
+    const dbUrl = new URL(process.env.DATABASE_URL);
     pgPool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }  // Requerido por Railway / Supabase
+        host: dbUrl.hostname,
+        port: parseInt(dbUrl.port) || 6543,
+        database: dbUrl.pathname.slice(1),
+        user: decodeURIComponent(dbUrl.username),
+        password: decodeURIComponent(dbUrl.password),
+        ssl: { rejectUnauthorized: false },
+        query_timeout: 10000   // requerido por PgBouncer en transaction mode
     });
     console.log('🐘 Usando PostgreSQL (Supabase/Railway)');
 } else {
