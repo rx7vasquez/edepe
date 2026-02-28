@@ -32,6 +32,12 @@ const App = {
         this.setupEvents();
         this.render();
 
+        // Initialize professional date display
+        const dateEl = document.getElementById('current-date-display');
+        if (dateEl) {
+            dateEl.textContent = new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) loadingScreen.classList.add('hidden');
         console.log("Sistema Inicializado con Seguridad.");
@@ -44,6 +50,8 @@ const App = {
 
         if (!this.currentUser) {
             sidebar.style.display = 'none';
+            const topBar = document.querySelector('.top-bar');
+            if (topBar) topBar.style.display = 'none';
             document.body.classList.add('login-mode');
 
             if (this.recoveryView === 'request') {
@@ -57,6 +65,8 @@ const App = {
         }
 
         sidebar.style.display = 'block';
+        const topBar = document.querySelector('.top-bar');
+        if (topBar) topBar.style.display = 'flex';
         document.body.classList.remove('login-mode');
 
         const nameEl = document.getElementById('current-user-name');
