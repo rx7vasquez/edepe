@@ -988,6 +988,7 @@ const RenderEngine = {
                     </button>
                     <button class="btn-primary" id="btn-add-indice"><i class="fas fa-plus"></i> Nuevo Manual</button>
                 </div>
+                <p style="text-align:right; font-size:0.78rem; color:var(--text-muted); margin:0 0 12px 0;">Índice Base Dic 2023 = 100</p>
                 <div class="table-container" style="max-height:55vh; overflow-y:auto;">
                     <table class="mop-table">
                         <thead><tr>
@@ -995,7 +996,7 @@ const RenderEngine = {
                             <th style="text-align:center;">Año</th>
                             <th style="text-align:center;">Mes</th>
                             <th>Tipo / Subtipo</th>
-                            <th style="text-align:right;">Índice Base</th>
+                            <th style="text-align:right;">Índice</th>
                             <th style="text-align:center; width:80px;">Acción</th>
                         </tr></thead>
                         <tbody>${mopRowsHtml}</tbody>
@@ -1005,19 +1006,20 @@ const RenderEngine = {
 
             <!-- Panel IPC -->
             <div id="panel-ipc" style="display:${activeTab === 'ipc' ? 'block' : 'none'}">
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:8px;">
                     <button class="btn-primary" id="btn-sync-ipc" ${isSyncingIpc ? 'disabled' : ''} style="background:var(--danger);">
                         ${isSyncingIpc ? '<i class="fas fa-spinner fa-spin"></i> Sincronizando...' : '<i class="fas fa-cloud-download-alt"></i> Sincronizar MOP'}
                     </button>
                     <button class="btn-primary" id="btn-add-ipc"><i class="fas fa-plus"></i> Nuevo Manual</button>
                 </div>
+                <p style="text-align:right; font-size:0.78rem; color:var(--text-muted); margin:0 0 12px 0;">Índice IPC 2023 base = 100</p>
                 <div class="table-container" style="max-height:55vh; overflow-y:auto;">
                     <table class="mop-table">
                         <thead><tr>
                             <th style="text-align:center; width:60px;">ID</th>
                             <th style="text-align:center;">Año</th>
                             <th style="text-align:center;">Mes</th>
-                            <th style="text-align:right;">Valor Índice (Puntos)</th>
+                            <th style="text-align:right;">Índice</th>
                             <th style="text-align:center; width:80px;">Acción</th>
                         </tr></thead>
                         <tbody>${ipcRowsHtml}</tbody>
