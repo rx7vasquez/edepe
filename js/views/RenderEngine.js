@@ -1096,7 +1096,7 @@ const RenderEngine = {
                     </select>
                 </div>
                 <div class="full-width">
-                    <label>Índice (IPC)</label>
+                    <label>Índice</label>
                     <input type="number" step="0.01" name="valor" value="${indice.valor || ''}" required placeholder="Ej: 103.24">
                 </div>
             </div>
@@ -1225,53 +1225,7 @@ const RenderEngine = {
             </form>`;
     },
 
-    'indice-mop-form'(data = {}) {
-        return `
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>${data.id ? 'Editar' : 'Nuevo'} Índice MOP Manual</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
-        <form id="indice-mop-form" class="mop-form">
-                ${data.id ? `<input type="hidden" name="id" value="${data.id}">` : ''}
-                <div class="mop-form-grid">
-                    <div><label>Año</label><input type="number" name="anio" value="${data.anio || new Date().getFullYear()}" required min="2000" max="2050"></div>
-                    <div><label>Mes (1-12)</label><input type="number" name="mes" value="${data.mes || new Date().getMonth() + 1}" required min="1" max="12"></div>
-                    <div class="full-width"><label>Tipo de Obra</label>
-                        <select name="tipo_obra" required id="indice-mop-tipo-reajuste">
-                            <option value="Infraestructura vial y portuaria" ${data.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
-                            <option value="Infraestructura Hidráulica" ${data.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
-                            <option value="Infraestructura aeroportuaria" ${data.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
-                            <option value="Edificación Pública" ${data.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
-                        </select>
-                    </div>
-                    <div class="full-width"><label>Subtipo de Obra</label>
-                        <select name="subtipo_obra" required id="indice-mop-subtipo-reajuste">
-                            <option value="${data.subtipo_obra || 'General'}">${data.subtipo_obra || 'General'}</option>
-                        </select>
-                    </div>
-                    <div><label>Índice Base</label><input type="number" step="0.0001" name="indice" value="${data.indice || ''}" required placeholder="Ej: 100.0000"></div>
-                </div>
-                <div style="background:rgba(255,152,0,0.1); padding:10px; border-radius:5px; margin-top:15px; font-size:0.8rem; color:var(--accent);">
-                    <i class="fas fa-exclamation-triangle"></i> Evite editar índices históricos si estos ya han sido utilizados en Estados de Pago aprobados.
-                </div>
-                <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">${data.id ? 'Actualizar Índice' : 'Guardar Nuevo Índice'}</button>
-            </form>`;
-    },
 
-    'indice-ipc-form'(data = {}) {
-        return `
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>${data.id ? 'Editar' : 'Nuevo'} Índice IPC Manual</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
-            <form id="indice-ipc-form" class="mop-form">
-                ${data.id ? `<input type="hidden" name="id" value="${data.id}">` : ''}
-                <div class="mop-form-grid">
-                    <div><label>Año</label><input type="number" name="anio" value="${data.anio || new Date().getFullYear()}" required min="2000" max="2050"></div>
-                    <div><label>Mes (1-12)</label><input type="number" name="mes" value="${data.mes || new Date().getMonth() + 1}" required min="1" max="12"></div>
-                    <div><label>Valor Índice (Puntos)</label><input type="number" step="0.01" name="valor" value="${data.valor || ''}" required placeholder="Ej: 104.5"></div>
-                    <div><label>Var. Mensual (%)</label><input type="number" step="0.1" name="variacion_mensual" value="${data.variacion_mensual || ''}" placeholder="Ej: 0.4"></div>
-                </div>
-                <div style="background:rgba(255,152,0,0.1); padding:10px; border-radius:5px; margin-top:15px; font-size:0.8rem; color:var(--accent);">
-                    <i class="fas fa-exclamation-triangle"></i> Evite editar índices históricos si estos ya han sido utilizados en Estados de Pago aprobados.
-                </div>
-                <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">${data.id ? 'Actualizar Índice' : 'Guardar Nuevo Índice'}</button>
-            </form>`;
-    },
 
     'edit-project-form'(p, clients) {
         return `
