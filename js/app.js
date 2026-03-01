@@ -601,6 +601,23 @@ const App = {
                     input.setSelectionRange(input.value.length, input.value.length);
                 }
             }
+
+            // Calculate Fecha de término automatically
+            if (e.target.name === 'term' || e.target.name === 'awardDate') {
+                const form = e.target.closest('form');
+                if (form && (form.id === 'project-form' || form.id === 'edit-project-form')) {
+                    const awardStr = form.querySelector('[name="awardDate"]')?.value;
+                    const termDays = parseInt(form.querySelector('[name="term"]')?.value) || 0;
+                    const endDisp = form.querySelector('[name="calculatedEndDate"]');
+                    if (awardStr && endDisp) {
+                        const d = new Date(awardStr + 'T12:00:00');
+                        d.setDate(d.getDate() + termDays);
+                        endDisp.value = d.toISOString().split('T')[0];
+                    } else if (endDisp) {
+                        endDisp.value = '';
+                    }
+                }
+            }
         });
 
         document.addEventListener('change', (e) => {

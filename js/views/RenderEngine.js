@@ -619,9 +619,9 @@ const RenderEngine = {
                     </div>
                     <div><label>SAFI</label><input type="text" name="codigoSafi"></div>
                     <div><label>BIP</label><input type="text" name="codigoBip"></div>
-                    <div><label>Adjudicación</label><input type="date" name="awardDate" required></div>
-                    <div><label>Inicio de Obra</label><input type="date" name="startDate" required></div>
+                    <div><label>Fecha tramitación</label><input type="date" name="awardDate" required></div>
                     <div><label>Plazo (Días)</label><input type="number" name="term" value="365" required></div>
+                    <div><label>Fecha de término</label><input type="date" name="calculatedEndDate" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); cursor:not-allowed;"></div>
                     <div class="full-width"><label>Moneda del Contrato</label>
                         <select name="currency" onchange="
                             const isUf = this.value === 'UF';
@@ -1339,9 +1339,14 @@ const RenderEngine = {
                         </div>
                         <div><label>SAFI</label><input type="text" name="codigoSafi" value="${p.codigoSafi || ''}"></div>
                         <div><label>BIP</label><input type="text" name="codigoBip" value="${p.codigoBip || ''}"></div>
-                        <div><label>Adjudicación</label><input type="date" name="awardDate" value="${p.awardDate}" required></div>
-                        <div><label>Inicio de Obra</label><input type="date" name="startDate" value="${p.startDate}" required></div>
-                        <div><label>Plazo</label><input type="number" name="term" value="${p.term}" required></div>
+                        <div><label>Fecha tramitación</label><input type="date" name="awardDate" value="${p.awardDate}" required></div>
+                        <div><label>Plazo (Días)</label><input type="number" name="term" value="${p.term}" required></div>
+                        <div><label>Fecha de término</label><input type="date" name="calculatedEndDate" value="${(() => {
+                if (!p.awardDate) return '';
+                const d = new Date(p.awardDate + 'T12:00:00');
+                d.setDate(d.getDate() + (parseInt(p.term) || 0));
+                return d.toISOString().split('T')[0];
+            })()}" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); cursor:not-allowed;"></div>
                         <div class="full-width"><label>Moneda del Contrato</label>
                         <select name="currency" onchange="
                             const isUf = this.value === 'UF';
