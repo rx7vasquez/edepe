@@ -651,68 +651,72 @@ const RenderEngine = {
                     </div>
 
                     <!-- MOP Polinomio Container -->
-                    <div id="form-new-reajuste-mop" class="full-width" style="display:flex; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
+                    <div id="form-new-reajuste-mop" class="full-width" style="display:flex; flex-direction:column; gap:10px; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
                         <div style="width:100%;">
                             <h4 style="margin:0 0 5px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
                             <p style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-color); opacity:0.7;">Información contenida en "anexo complementario".</p>
                         </div>
-                        <div style="flex:1; min-width:200px;">
-                            <label>Tipo de Obra</label>
-                            <select name="tipo_obra" id="project-tipo-reajuste">
-                                <option value="" disabled selected>Seleccione...</option>
-                                <option value="Infraestructura vial y portuaria">Infraestructura vial y portuaria</option>
-                                <option value="Infraestructura Hidráulica">Infraestructura Hidráulica</option>
-                                <option value="Infraestructura aeroportuaria">Infraestructura aeroportuaria</option>
-                                <option value="Edificación Pública">Edificación Pública</option>
-                            </select>
-                        </div>
-                        <div style="flex:1; min-width:200px;">
-                            <label>Subtipo de Obra</label>
-                            <select name="subtipo_obra" id="project-subtipo-reajuste">
-                                <option value="" disabled selected>Seleccione...</option>
-                                <option value="General">General</option>
-                                <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
-                                <option value="Intensivo en asfalto">Intensivo en asfalto</option>
-                                <option value="Intensivo en cemento">Intensivo en cemento</option>
-                                <option value="Intensivo en acero">Intensivo en acero</option>
-                            </select>
-                        </div>
-                        <div style="flex:1; min-width:210px;">
-                            <label>Mes y Año Presupuesto (Base)</label>
-                            <div style="display:flex; gap:5px;">
-                                <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
-                                    <option value="" disabled selected>Mes</option>
-                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}">${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
-                                </select>
-                                <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
-                                    <option value="" disabled selected>Año</option>
-                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}">${y}</option>`).join('')}
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; width:100%;">
+                            <div style="flex:1; min-width:200px;">
+                                <label>Tipo de Obra</label>
+                                <select name="tipo_obra" id="project-tipo-reajuste">
+                                    <option value="" disabled selected>Seleccione...</option>
+                                    <option value="Infraestructura vial y portuaria">Infraestructura vial y portuaria</option>
+                                    <option value="Infraestructura Hidráulica">Infraestructura Hidráulica</option>
+                                    <option value="Infraestructura aeroportuaria">Infraestructura aeroportuaria</option>
+                                    <option value="Edificación Pública">Edificación Pública</option>
                                 </select>
                             </div>
-                        </div>
-                        <div style="flex:1; min-width:100px;">
-                            <label>Índice Resultante</label>
-                            <input type="text" class="display-reajuste-index" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                            <div style="flex:1; min-width:200px;">
+                                <label>Subtipo de Obra</label>
+                                <select name="subtipo_obra" id="project-subtipo-reajuste">
+                                    <option value="" disabled selected>Seleccione...</option>
+                                    <option value="General">General</option>
+                                    <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
+                                    <option value="Intensivo en asfalto">Intensivo en asfalto</option>
+                                    <option value="Intensivo en cemento">Intensivo en cemento</option>
+                                    <option value="Intensivo en acero">Intensivo en acero</option>
+                                </select>
+                            </div>
+                            <div style="flex:1; min-width:210px;">
+                                <label>Mes y Año Presupuesto (Base)</label>
+                                <div style="display:flex; gap:5px;">
+                                    <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
+                                        <option value="" disabled selected>Mes</option>
+                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}">${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                    </select>
+                                    <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
+                                        <option value="" disabled selected>Año</option>
+                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}">${y}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="flex:1; min-width:100px;">
+                                <label>Índice Resultante</label>
+                                <input type="text" class="display-reajuste-index" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                            </div>
                         </div>
                     </div>
 
                     <!-- IPC Container -->
-                    <div id="form-new-reajuste-ipc" class="full-width" style="display:none; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
+                    <div id="form-new-reajuste-ipc" class="full-width" style="display:none; flex-direction:column; gap:10px; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
                         <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
-                        <div style="flex:1; min-width:210px;">
-                            <label>Mes y Año Base IPC</label>
-                            <div style="display:flex; gap:5px;">
-                                <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
-                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
-                                </select>
-                                <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
-                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
-                                </select>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; width:100%;">
+                            <div style="flex:1; min-width:210px;">
+                                <label>Mes y Año Base IPC</label>
+                                <div style="display:flex; gap:5px;">
+                                    <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
+                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                    </select>
+                                    <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
+                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <div style="flex:1; min-width:100px;">
-                            <label>Índice IPC Resultante</label>
-                            <input type="text" class="display-reajuste-index-ipc" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                            <div style="flex:1; min-width:100px;">
+                                <label>Índice IPC Resultante</label>
+                                <input type="text" class="display-reajuste-index-ipc" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                            </div>
                         </div>
                     </div>
 
@@ -1367,21 +1371,22 @@ const RenderEngine = {
                         </div>
 
                         <!-- MOP Polinomio Container -->
-                        <div id="form-edit-reajuste-mop" class="full-width" style="display: ${(p.annexes.tipoReajuste || 'Polinomio') === 'Polinomio' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
+                        <div id="form-edit-reajuste-mop" class="full-width" style="display: ${(p.annexes.tipoReajuste || 'Polinomio') === 'Polinomio' && p.currency !== 'UF' ? 'flex' : 'none'}; flex-direction:column; gap:10px; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
                             <div style="width:100%;">
                                 <h4 style="margin:0 0 5px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
                                 <p style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-color); opacity:0.7;">Información contenida en "anexo complementario".</p>
                             </div>
-                            <div style="flex:1; min-width:200px;">
-                                <label>Tipo de Obra</label>
-                                <select name="tipo_obra" required id="project-tipo-reajuste">
-                                    <option value="" disabled ${!p.annexes.tipo_obra ? 'selected' : ''}>Seleccione...</option>
-                                    <option value="Infraestructura vial y portuaria" ${p.annexes.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
-                                    <option value="Infraestructura Hidráulica" ${p.annexes.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
-                                    <option value="Infraestructura aeroportuaria" ${p.annexes.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
-                                    <option value="Edificación Pública" ${p.annexes.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
-                                </select>
-                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; width:100%;">
+                                <div style="flex:1; min-width:200px;">
+                                    <label>Tipo de Obra</label>
+                                    <select name="tipo_obra" required id="project-tipo-reajuste">
+                                        <option value="" disabled ${!p.annexes.tipo_obra ? 'selected' : ''}>Seleccione...</option>
+                                        <option value="Infraestructura vial y portuaria" ${p.annexes.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
+                                        <option value="Infraestructura Hidráulica" ${p.annexes.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
+                                        <option value="Infraestructura aeroportuaria" ${p.annexes.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
+                                        <option value="Edificación Pública" ${p.annexes.tipo_obra === 'Edificación Pública' ? 'selected' : ''}>Edificación Pública</option>
+                                    </select>
+                                </div>
                             <div style="flex:1; min-width:200px;">
                                 <label>Subtipo de Obra</label>
                                 <select name="subtipo_obra" required id="project-subtipo-reajuste">
@@ -1409,22 +1414,24 @@ const RenderEngine = {
                         </div>
 
                         <!-- IPC Container -->
-                        <div id="form-edit-reajuste-ipc" class="full-width" style="display: ${p.annexes.tipoReajuste === 'IPC' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
+                        <div id="form-edit-reajuste-ipc" class="full-width" style="display: ${p.annexes.tipoReajuste === 'IPC' && p.currency !== 'UF' ? 'flex' : 'none'}; flex-direction:column; gap:10px; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
                             <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
-                            <div style="flex:1; min-width:210px;">
-                                <label>Mes y Año Base IPC</label>
-                                <div style="display:flex; gap:5px;">
-                                    <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
-                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
-                                    </select>
-                                    <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
-                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
-                                    </select>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; width:100%;">
+                                <div style="flex:1; min-width:210px;">
+                                    <label>Mes y Año Base IPC</label>
+                                    <div style="display:flex; gap:5px;">
+                                        <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
+                                            ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                        </select>
+                                        <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
+                                            ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
-                            <div style="flex:1; min-width:100px;">
-                                <label>Índice IPC Resultante</label>
-                                <input type="text" class="display-reajuste-index-ipc" value="${p.annexes.reajusteIndex || '0.00'}" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                                <div style="flex:1; min-width:100px;">
+                                    <label>Índice IPC Resultante</label>
+                                    <input type="text" class="display-reajuste-index-ipc" value="${p.annexes.reajusteIndexIpc || '0.00'}" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
+                                </div>
                             </div>
                         </div>
                         
