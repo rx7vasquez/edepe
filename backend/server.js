@@ -15,6 +15,21 @@ const FRONTEND_DIR = path.join(__dirname, '..');
 app.use(express.static(FRONTEND_DIR));
 
 // Rutas API
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+const companiesRoutes = require('./routes/companies');
+app.use('/api/companies', companiesRoutes);
+
+const projectsRoutes = require('./routes/projects');
+app.use('/api/projects', projectsRoutes);
+
+const clientsRoutes = require('./routes/clients');
+app.use('/api/clients', clientsRoutes);
+
+const usersRoutes = require('./routes/users');
+app.use('/api/users', usersRoutes);
+
 const polinomiosRoutes = require('./routes/polinomios');
 app.use('/api/polinomios', polinomiosRoutes);
 

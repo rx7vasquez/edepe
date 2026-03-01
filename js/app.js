@@ -23,11 +23,33 @@ const App = {
         'Edificación Pública': ['General']
     },
 
-    init() {
-        this.projects = StorageService.load();
-        this.clients = StorageService.loadClients();
-        this.users = StorageService.loadUsers();
+    async init() {
         this.currentUser = AuthService.getCurrentUser();
+
+        if (this.currentUser) {
+            try {
+                this.projects = await ProjectApiService.getProjects() || [];
+                this.clients = await ProjectApiService.getClients() || [];
+                this.users = await ProjectApiService.getUsers() || [];
+
+                if (AuthService.isSysAdmin()) {
+                    this.companies = await ProjectApiService.getCompanies() || [];
+                } else {
+                    this.companies = [];
+                }
+            } catch (e) {
+                console.error("Error inicializando datos desde API:", e);
+                this.projects = [];
+                this.clients = [];
+                this.users = [];
+                this.companies = [];
+            }
+        } else {
+            this.projects = [];
+            this.clients = [];
+            this.users = [];
+            this.companies = [];
+        }
 
         this.setupEvents();
         this.render();
@@ -40,7 +62,73 @@ const App = {
 
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) loadingScreen.classList.add('hidden');
-        console.log("Sistema Inicializado con Seguridad.");
+        console.log("Sistema Inicializado con Seguridad SaaS.");
+    },
+
+    async saveProjectState(p) {
+        if (!p) return;
+        try {
+            const tempId = String(p.id);
+            if (p.id && !tempId.startsWith('0.') && !tempId.includes(Math.random().toString(36).substring(2, 5))) {
+                await ProjectApiService.updateProject(p.id, p);
+            } else {
+                const res = await ProjectApiService.createProject(p);
+                p.id = res.id;
+            }
+        } catch (e) { console.error("Error API Project", e); alert("Error guardando proyecto."); }
+    },
+
+    async saveCompanyState(companyData) {
+        if (!companyData) return;
+        try {
+            if (companyData.id) {
+                await ProjectApiService.updateCompanyStatus(companyData.id, companyData.status);
+            } else {
+                await ProjectApiService.createCompany(companyData);
+                // Fetch fresh companies to get the new ID and user
+                this.companies = await ProjectApiService.getCompanies() || [];
+            }
+        } catch (e) {
+            console.error("Error API Company", e);
+            const errBody = await e.response?.json().catch(() => ({}));
+            alert("Error guardando empresa: " + (errBody?.error || e.message));
+        }
+    },
+
+    async deleteUserState(id) { try { await ProjectApiService.deleteUser(id); this.users = this.users.filter(u => u.id !== id); } catch (e) { } },
+    async deleteClientState(id) { try { await ProjectApiService.deleteClient(id); this.clients = this.clients.filter(c => c.id !== id); } catch (e) { } },
+    async deleteProjectState(id) {
+        try {
+            await ProjectApiService.deleteProject(id);
+            this.projects = this.projects.filter(pj => pj.id !== id);
+        } catch (e) { console.error("Error API delete", e); }
+    },
+
+    async saveUserState(u) {
+        if (!u) return;
+        try {
+            if (u.id && typeof u.id === 'number') {
+                await ProjectApiService.updateUser(u.id, u);
+            } else {
+                const res = await ProjectApiService.createUser({ ...u, tempPassword: u.password || 'temporal123' });
+                u.id = res.id;
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error guardando usuario. Quizás el correo ya esté en uso o la contraseña no es válida.");
+        }
+    },
+
+    async saveClientState(c) {
+        if (!c) return;
+        try {
+            if (c.id) {
+                await ProjectApiService.updateClient(c.id, c);
+            } else {
+                const res = await ProjectApiService.createClient(c);
+                c.id = res.id;
+            }
+        } catch (e) { console.error(e); }
     },
 
     render() {
@@ -58,6 +146,8 @@ const App = {
                 main.innerHTML = RenderEngine.recovery();
             } else if (this.recoveryView === 'reset') {
                 main.innerHTML = RenderEngine.reset(this.currentRecoveryEmail);
+            } else if (this.loginView === 'register') {
+                main.innerHTML = RenderEngine.register();
             } else {
                 main.innerHTML = RenderEngine.login();
             }
@@ -87,6 +177,9 @@ const App = {
         const adminLinks = document.querySelectorAll('.admin-only');
         adminLinks.forEach(l => l.style.display = AuthService.isAdmin() ? 'block' : 'none');
 
+        const sysadminLinks = document.querySelectorAll('.sysadmin-only');
+        sysadminLinks.forEach(l => l.style.display = AuthService.isSysAdmin() ? 'block' : 'none');
+
         document.querySelectorAll('.nav-links li').forEach(li => {
             li.classList.toggle('active', li.dataset.view === this.currentView);
         });
@@ -102,6 +195,7 @@ const App = {
             'projections': () => RenderEngine.projections(filteredProjects),
             'clients': () => RenderEngine.clients(this.clients),
             'usuarios': () => RenderEngine.usuarios(this.users, this.projects, this.userSearchTerm, this.userRoleFilter),
+            'companies': () => RenderEngine.companies(this.companies || []),
             'mantenedor-reajuste': () => RenderEngine['mantenedor-reajuste']({
                 polinomioIndices: this.polinomioIndices || [],
                 ipcIndices: this.ipcIndices || [],
@@ -212,9 +306,8 @@ const App = {
                 this.showModal('confirm', {
                     title: 'Eliminar Usuario',
                     message: `¿Está seguro de que desea eliminar a ${u.name} ${u.lastName}?`,
-                    onConfirm: () => {
-                        this.users = this.users.filter(user => user.id !== u.id);
-                        StorageService.saveUsers(this.users);
+                    onConfirm: async () => {
+                        await this.deleteUserState(u.id);
                         this.render();
                     }
                 });
@@ -223,12 +316,20 @@ const App = {
 
             if (target.id === 'btn-forgot-password') {
                 this.recoveryView = 'request';
+                this.loginView = null;
+                this.render();
+                return;
+            }
+            if (target.id === 'btn-show-register') {
+                this.loginView = 'register';
+                this.recoveryView = null;
                 this.render();
                 return;
             }
             if (target.id === 'btn-back-login') {
                 this.recoveryView = null;
                 this.currentRecoveryEmail = null;
+                this.loginView = 'login';
                 this.render();
                 return;
             }
@@ -323,7 +424,35 @@ const App = {
                 return;
             }
 
+            if (id === 'btn-nueva-empresa') { this.showModal('company-form'); return; }
             if (id === 'btn-add-client') { this.showModal('client'); return; }
+            if (target.classList.contains('btn-suspend-company')) {
+                const cid = parseInt(target.dataset.id);
+                this.showModal('confirm', {
+                    title: 'Suspender Empresa',
+                    message: '¿Está seguro de suspender esta empresa? Sus usuarios ya no podrán ingresar al sistema.',
+                    onConfirm: async () => {
+                        await this.saveCompanyState({ id: cid, status: 'suspended' });
+                        // Re-fetch companies to update UI
+                        this.companies = await ProjectApiService.getCompanies() || [];
+                        this.render();
+                    }
+                });
+                return;
+            }
+            if (target.classList.contains('btn-activate-company')) {
+                const cid = parseInt(target.dataset.id);
+                this.showModal('confirm', {
+                    title: 'Activar Empresa',
+                    message: '¿Está seguro de (re)activar esta empresa?',
+                    onConfirm: async () => {
+                        await this.saveCompanyState({ id: cid, status: 'active' });
+                        this.companies = await ProjectApiService.getCompanies() || [];
+                        this.render();
+                    }
+                });
+                return;
+            }
             if (target.classList.contains('btn-edit-client')) {
                 const index = parseInt(target.dataset.index);
                 const client = { ...this.clients[index], index };
@@ -344,7 +473,7 @@ const App = {
                         p.baselineItems = JSON.parse(JSON.stringify(p.items));
                         p.baselineLockedAt = new Date().toISOString();
                         p.baselineLockedBy = this.currentUser ? `${this.currentUser.name} ${this.currentUser.lastName}` : 'Sistema';
-                        StorageService.save(this.projects);
+                        this.saveProjectState(p);
                         this.render();
                         document.getElementById('global-modal').style.display = 'none';
                     }
@@ -407,7 +536,7 @@ const App = {
                         message: `¿Está seguro de que desea eliminar la partida "${item.id}: ${item.name}"?`,
                         onConfirm: () => {
                             p.items = p.items.filter(i => i.id !== item.id);
-                            StorageService.save(this.projects);
+                            this.saveProjectState(p);
                             this.render();
                         }
                     });
@@ -466,9 +595,37 @@ const App = {
             console.log(`[Form Submit] ID: ${e.target.id}`, data);
 
             if (e.target.id === 'login-form') {
-                const user = AuthService.login(data.email, data.password, this.users);
-                if (user) { this.currentUser = user; this.render(); }
-                else { document.getElementById('login-error').style.display = 'block'; }
+                try {
+                    const user = await AuthService.login(data.email, data.password);
+                    if (user) {
+                        this.currentUser = user;
+                        await this.init();
+                    }
+                } catch (error) {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            }
+
+            if (e.target.id === 'register-form') {
+                const btn = e.target.querySelector('button[type="submit"]');
+                const errorPara = document.getElementById('register-error');
+
+                try {
+                    btn.textContent = 'Enviando...';
+                    btn.disabled = true;
+                    errorPara.style.display = 'none';
+
+                    await AuthService.register(data.companyName, data.rut, data.userName, data.lastName, data.email, data.password);
+
+                    alert('Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador.');
+                    this.loginView = 'login';
+                    this.render();
+                } catch (err) {
+                    errorPara.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error: ${err.message || 'No se pudo registrar la empresa.'}`;
+                    errorPara.style.display = 'block';
+                    btn.textContent = 'Enviar Solicitud de Registro';
+                    btn.disabled = false;
+                }
             }
 
             if (e.target.id === 'recovery-form') {
@@ -487,18 +644,40 @@ const App = {
                 const u = this.users.find(u => u.email === data.email);
                 if (u) {
                     u.password = data.password;
-                    StorageService.saveUsers(this.users);
+                    this.saveUserState(u);
                     alert("Contraseña actualizada con éxito.");
                     this.recoveryView = null;
                     this.render();
                 }
             }
 
+            if (e.target.id === 'company-form') {
+                // Show basic loading indication
+                const btn = e.target.querySelector('button[type="submit"]');
+                const origText = btn.textContent;
+                btn.textContent = 'Creando...';
+                btn.disabled = true;
+
+                await this.saveCompanyState({
+                    name: data.name,
+                    rut: data.rut,
+                    adminName: data.adminName,
+                    adminLastName: data.adminLastName,
+                    adminEmail: data.adminEmail,
+                    adminPassword: data.adminPassword,
+                    status: data.status
+                });
+
+                document.getElementById('global-modal').style.display = 'none';
+                this.render();
+                return;
+            }
+
             if (e.target.id === 'client-form') {
                 const clientData = { rut: data.rut, name: data.name, dept: data.dept, addr: data.addr };
                 if (data.clientIndex !== '') this.clients[parseInt(data.clientIndex)] = clientData;
                 else this.clients.push(clientData);
-                StorageService.saveClients(this.clients);
+                this.saveClientState(clientData);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -513,7 +692,7 @@ const App = {
                         registeredBy: this.currentUser ? `${this.currentUser.name} ${this.currentUser.lastName}` : 'Sistema',
                         itemsSnapshot: JSON.parse(JSON.stringify(p.items))
                     });
-                    StorageService.save(this.projects);
+                    this.saveProjectState(p);
                     document.getElementById('global-modal').style.display = 'none';
                     this.render();
                 }
@@ -532,7 +711,7 @@ const App = {
                         reader.onload = (ev) => {
                             u.avatar = ev.target.result;
                             this.currentUser = u;
-                            StorageService.saveUsers(this.users);
+                            this.saveUserState(u);
                             document.getElementById('global-modal').style.display = 'none';
                             this.render();
                         };
@@ -540,7 +719,7 @@ const App = {
                         return; // Async save
                     } else {
                         this.currentUser = u;
-                        StorageService.saveUsers(this.users);
+                        this.saveUserState(u);
                     }
                 }
                 document.getElementById('global-modal').style.display = 'none';
@@ -553,7 +732,7 @@ const App = {
                     Object.assign(u, data);
                     if (data.password) u.password = data.password;
                 } else this.users.push(new User(data));
-                StorageService.saveUsers(this.users);
+                this.saveUserState(u);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -563,7 +742,7 @@ const App = {
                 const assigned = [];
                 e.target.querySelectorAll('input[name="projects"]:checked').forEach(cb => assigned.push(cb.value));
                 u.assignedProjects = assigned;
-                StorageService.saveUsers(this.users);
+                this.saveUserState(u);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -647,7 +826,7 @@ const App = {
                 newProject.annexes.tipo_obra = data.tipo_obra || 'Edificación Pública';
                 newProject.annexes.subtipo_obra = data.subtipo_obra || 'General';
                 this.projects.push(newProject);
-                StorageService.save(this.projects);
+                this.saveProjectState(p);
                 this.currentView = 'proyectos';
                 this.render();
             }
@@ -662,7 +841,7 @@ const App = {
                 p.annexes.tipoReajuste = data.currency === 'UF' ? 'Ninguno' : (data.tipoReajuste || p.annexes.tipoReajuste || 'Polinomio');
                 p.annexes.tipo_obra = data.tipo_obra || p.annexes.tipo_obra;
                 p.annexes.subtipo_obra = data.subtipo_obra || p.annexes.subtipo_obra;
-                StorageService.save(this.projects);
+                this.saveProjectState(p);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -679,7 +858,7 @@ const App = {
                     itemType: data.itemType || null  // null = pre-baseline (will be 'Original' when baseline locked)
                 };
                 p.items.push(newItem);
-                StorageService.save(this.projects);
+                this.saveProjectState(p);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -720,7 +899,7 @@ const App = {
 
                     // Within limit → save
                     p.items[index] = { ...p.items[index], id: data.itemId, name: data.name, unit: data.unit, classification: data.classification, quantity: newQty, price: parseFloat(data.price) };
-                    StorageService.save(this.projects);
+                    this.saveProjectState(p);
                     document.getElementById('global-modal').style.display = 'none';
                     this.render();
                 } else {
@@ -736,7 +915,7 @@ const App = {
                     date: new Date().toISOString(),
                     registeredBy: this.currentUser ? `${this.currentUser.name} ${this.currentUser.lastName}` : 'Sistema'
                 });
-                StorageService.save(this.projects);
+                this.saveProjectState(p);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
             }
@@ -872,7 +1051,7 @@ const App = {
                     net: val - ret + r
                 });
 
-                StorageService.save(this.projects);
+                this.saveProjectState(p);
                 this.currentView = 'financial';
                 this.render();
             }
@@ -1097,3 +1276,4 @@ const App = {
 };
 
 window.onload = () => App.init();
+

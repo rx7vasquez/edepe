@@ -1,0 +1,86 @@
+const express = require('express');
+const { query, IS_POSTGRES } = require('../db/database');
+const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
+
+const router = express.Router();
+router.use(authenticateToken);
+
+// GET all users in the same company (Only Admin Cliente can view all, or anyone can view? Usually anyone can view their peers for assignment, but only Admin manages them)
+router.get('/', async (req, res) => {
+    try {
+        const rawUsers = await query(
+            'SELECT id, name, lastName, email, role, avatar, is_active, assignedProjectIds FROM users WHERE company_id = $1',
+            [req.user.companyId]
+        );
+        const mappedUsers = rawUsers.map(u => ({
+            id: u.id,
+            name: u.name,
+            lastName: u.lastname || u.lastName || '',
+            email: u.email,
+            role: u.role,
+            avatar: u.avatar,
+            is_active: u.is_active,
+            assignedProjectIds: u.assignedprojectids || u.assignedProjectIds || '[]'
+        }));
+        res.json(mappedUsers);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST create new user in company (Only Admin Cliente)
+router.post('/', requireRole(['Admin Cliente']), async (req, res) => {
+    const { name, lastName, email, tempPassword, role, assignedProjectIds } = req.body;
+    try {
+        const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existing.length > 0) return res.status(400).json({ error: 'Email already exists' });
+
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(tempPassword || 'temporal123', salt);
+
+        const sql = `
+            INSERT INTO users (company_id, name, lastName, email, password_hash, role, assignedProjectIds) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7) ${IS_POSTGRES ? 'RETURNING id' : ''}
+        `;
+        const params = [
+            req.user.companyId, name, lastName, email, hash, role || 'Usuario Normal', JSON.stringify(assignedProjectIds || [])
+        ];
+
+        const result = await query(sql, params);
+        res.status(201).json({ id: IS_POSTGRES ? result[0].id : result[0].id, message: 'User created' });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// PUT update user (role, active status, assigned projects)
+router.put('/:id', requireRole(['Admin Cliente']), async (req, res) => {
+    const { role, is_active, assignedProjectIds } = req.body;
+    try {
+        const sql = `
+            UPDATE users SET role = $1, is_active = $2, assignedProjectIds = $3
+            WHERE id = $4 AND company_id = $5
+        `;
+        await query(sql, [role, is_active ? 1 : 0, JSON.stringify(assignedProjectIds || []), req.params.id, req.user.companyId]);
+        res.json({ message: 'User updated' });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// DELETE User (Optional, could just set is_active=0)
+router.delete('/:id', requireRole(['Admin Cliente']), async (req, res) => {
+    try {
+        await query('DELETE FROM users WHERE id = $1 AND company_id = $2', [req.params.id, req.user.companyId]);
+        res.json({ message: 'User deleted' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+module.exports = router;

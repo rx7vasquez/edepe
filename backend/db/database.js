@@ -93,9 +93,77 @@ async function initDb() {
             UNIQUE(anio, mes)
         )`;
 
+    const createCompanies = `
+        CREATE TABLE IF NOT EXISTS companies (
+            id ${IS_POSTGRES ? 'SERIAL' : 'INTEGER'} PRIMARY KEY ${IS_POSTGRES ? '' : 'AUTOINCREMENT'},
+            name TEXT NOT NULL,
+            rut TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
+
+    const createUsers = `
+        CREATE TABLE IF NOT EXISTS users (
+            id ${IS_POSTGRES ? 'SERIAL' : 'INTEGER'} PRIMARY KEY ${IS_POSTGRES ? '' : 'AUTOINCREMENT'},
+            company_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            lastName TEXT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'Usuario Normal',
+            assignedProjectIds TEXT DEFAULT '[]',
+            avatar TEXT,
+            is_active ${IS_POSTGRES ? 'BOOLEAN DEFAULT true' : 'INTEGER DEFAULT 1'},
+            FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        )`;
+
+    const createProjects = `
+        CREATE TABLE IF NOT EXISTS projects (
+            id ${IS_POSTGRES ? 'SERIAL' : 'INTEGER'} PRIMARY KEY ${IS_POSTGRES ? '' : 'AUTOINCREMENT'},
+            company_id INTEGER NOT NULL,
+            codigo TEXT NOT NULL,
+            nombre TEXT NOT NULL,
+            descripcion TEXT,
+            clientId INTEGER,
+            tipo_obra TEXT,
+            subtipo_obra TEXT,
+            estado TEXT DEFAULT 'Activo',
+            presupuesto_total REAL,
+            presupuesto_gastos_generales REAL,
+            presupuesto_utilidades REAL,
+            plazo_dias INTEGER,
+            fecha_inicio TEXT,
+            anticipo_porcentaje REAL DEFAULT 0,
+            retencion_porcentaje REAL DEFAULT 0,
+            retencion_tope REAL,
+            proporcion_reajuste_mandante REAL DEFAULT 1,
+            tipo_reajuste TEXT DEFAULT 'None',
+            moneda TEXT DEFAULT 'CLP',
+            items TEXT DEFAULT '[]',
+            advances TEXT DEFAULT '[]',
+            edps TEXT DEFAULT '[]',
+            FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        )`;
+
+    const createClients = `
+        CREATE TABLE IF NOT EXISTS clients (
+            id ${IS_POSTGRES ? 'SERIAL' : 'INTEGER'} PRIMARY KEY ${IS_POSTGRES ? '' : 'AUTOINCREMENT'},
+            company_id INTEGER NOT NULL,
+            rut TEXT NOT NULL,
+            name TEXT NOT NULL,
+            address TEXT,
+            email TEXT,
+            phone TEXT,
+            FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+        )`;
+
     await query(createPolinomio);
     await query(createIPC);
-    console.log('✅ Base de datos inicializada o sincronizada.');
+    await query(createCompanies);
+    await query(createUsers);
+    await query(createClients);
+    await query(createProjects);
+    console.log('✅ Base de datos SaaS inicializada.');
 }
 
 module.exports = { query, getDriver, initDb, IS_POSTGRES };

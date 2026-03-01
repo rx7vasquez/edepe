@@ -130,6 +130,8 @@
                 <li data-view="financial" id="nav-financial"><i class="fas fa-file-invoice-dollar"></i> Estados de Pago
                 </li>
                 <li data-view="clients" id="nav-clients"><i class="fas fa-building"></i> Mandantes</li>
+                <li data-view="companies" id="nav-companies" class="sysadmin-only" style="display:none;"><i
+                        class="fas fa-city"></i> Gestión de Empresas</li>
                 <li data-view="mantenedor-reajuste" id="nav-mantenedor-reajuste" class="admin-only"
                     style="display:none;"><i class="fas fa-database"></i> Mantenedor Reajustes</li>
                 <li data-view="usuarios" id="nav-usuarios" class="admin-only" style="display:none;"><i
@@ -149,7 +151,8 @@
         </main>
     </div>
 
-    <script src="js/services/StorageService.js"></script>
+    <script src="js/services/ApiService.js"></script>
+    <script src="js/services/ProjectApiService.js"></script>
     <script src="js/services/AuthService.js"></script>
     <script src="js/services/PolinomioApiService.js"></script>
     <script src="js/services/IpcApiService.js"></script>

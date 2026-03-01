@@ -716,7 +716,8 @@ const RenderEngine = {
                         <label><i class="fas fa-lock"></i> Contraseña</label>
                         <input type="password" name="password" required placeholder="••••••••">
                     </div>
-                    <div class="form-footer-links">
+                    <div class="form-footer-links" style="display:flex; justify-content:space-between; width:100%;">
+                        <button type="button" id="btn-show-register" class="login-link">¿No tienes cuenta?</button>
                         <button type="button" id="btn-forgot-password" class="login-link">¿Olvidó su contraseña?</button>
                     </div>
                     <button type="submit" class="btn-login-submit">Entrar al Sistema</button>
@@ -725,6 +726,52 @@ const RenderEngine = {
             </div>
             <div class="login-page-footer">
                 &copy; ${new Date().getFullYear()} Edepe. Todos los derechos reservados.
+            </div>
+        </div>`;
+    },
+
+    register() {
+        return `
+        <div class="login-page">
+            <div class="login-card" style="max-width:500px">
+                <div class="login-brand">
+                    <img src="assets/logo.png" alt="Edepe">
+                </div>
+                <div class="login-header">
+                    <h1>Crear Cuenta</h1>
+                    <p>Registra tu empresa para acceder al sistema Multi-Tenant</p>
+                </div>
+                <form id="register-form" class="mop-form">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="form-group-login">
+                            <label><i class="fas fa-building"></i> Nombre Empresa</label>
+                            <input type="text" name="companyName" required placeholder="Ej: Constructora Beta">
+                        </div>
+                        <div class="form-group-login">
+                            <label><i class="fas fa-id-card"></i> RUT Empresa (Opcional)</label>
+                            <input type="text" name="rut" placeholder="Ej: 76.123.456-7">
+                        </div>
+                        <div class="form-group-login">
+                            <label><i class="fas fa-user"></i> Tu Nombre</label>
+                            <input type="text" name="userName" required placeholder="Juan">
+                        </div>
+                        <div class="form-group-login">
+                            <label><i class="fas fa-user"></i> Tus Apellidos</label>
+                            <input type="text" name="lastName" required placeholder="Pérez">
+                        </div>
+                    </div>
+                    <div class="form-group-login" style="margin-top:16px;">
+                        <label><i class="fas fa-envelope"></i> Correo Electrónico Corporativo</label>
+                        <input type="email" name="email" required placeholder="juan@constructorabeta.cl">
+                    </div>
+                    <div class="form-group-login">
+                        <label><i class="fas fa-lock"></i> Contraseña Segura</label>
+                        <input type="password" name="password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-login-submit" style="margin-top:16px;">Enviar Solicitud de Registro</button>
+                    <button type="button" id="btn-back-login" class="btn-text-login full-width"><i class="fas fa-arrow-left"></i> Volver al Login</button>
+                    <p id="register-error" class="login-error-msg" style="display:none;"><i class="fas fa-exclamation-circle"></i> Error al registrar.</p>
+                </form>
             </div>
         </div>`;
     },
@@ -1719,6 +1766,66 @@ const RenderEngine = {
                 </div>
             </div>
             <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">Guardar Índice</button>
+        </form>`;
+    },
+
+    companies(comps) {
+        return `
+        <div class="view active">
+            <div class="view-header header-flex">
+                <div>
+                    <h1>Empresas Registradas</h1>
+                    <p style="color:var(--text-muted);">Administración Multi-Tenant SaaS</p>
+                </div>
+                <button class="btn-primary" id="btn-nueva-empresa"><i class="fas fa-plus"></i> Nueva Empresa</button>
+            </div>
+            <div class="project-grid">
+                ${comps.length ? comps.map(c => `
+                    <div class="project-card" style="position:relative;">
+                        <span class="status-badge" style="position:absolute; top:15px; right:15px; background:${c.status === 'active' ? 'var(--success)' : (c.status === 'suspended' ? 'var(--danger)' : 'var(--warning)')}; color:white;">${c.status.toUpperCase()}</span>
+                        <h3 style="margin:20px 0 5px 0;">${c.name}</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">RUT: ${c.rut || 'N/A'}</p>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
+                            ${c.status === 'active' ?
+                `<button class="btn-text btn-suspend-company" data-id="${c.id}" style="color:var(--danger); padding:0;"><i class="fas fa-ban"></i> Suspender</button>` :
+                `<button class="btn-text btn-activate-company" data-id="${c.id}" style="color:var(--success); padding:0;"><i class="fas fa-check"></i> Activar</button>`
+            }
+                        </div>
+                    </div>`).join('') : '<div class="stat-card full-width">No se encontraron empresas registradas.</div>'}
+            </div>
+        </div>`;
+    },
+
+    'company-form'() {
+        return `
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h2>Nueva Empresa SaaS</h2>
+            <button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <form id="company-form" class="mop-form">
+            <div class="mop-form-grid">
+                <div><label>Nombre de la Empresa</label><input type="text" name="name" required placeholder="Ej: Constructora MOP"></div>
+                <div><label>RUT Empresa</label><input type="text" name="rut" placeholder="Ej: 76.123.456-7"></div>
+                
+                <div class="full-width" style="margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                    <h4 style="margin-bottom:10px; color:var(--accent);">Primer Usuario (Admin Cliente)</h4>
+                </div>
+                
+                <div><label>Nombre</label><input type="text" name="adminName" required></div>
+                <div><label>Apellidos</label><input type="text" name="adminLastName" required></div>
+                <div><label>Correo Electrónico</label><input type="email" name="adminEmail" required></div>
+                <div><label>Contraseña Temporal</label><input type="password" name="adminPassword" required></div>
+                
+                <div class="full-width">
+                     <label>Estado Inicial</label>
+                     <select name="status">
+                         <option value="active" selected>Activo (Recomendado)</option>
+                         <option value="pending">Pendiente de Revisión</option>
+                     </select>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary full-width" style="justify-content:center; margin-top:20px;">Crear Empresa y Administrador</button>
         </form>`;
     }
 };
