@@ -82,8 +82,9 @@ const App = {
     async saveProjectState(p) {
         if (!p) return;
         try {
-            const tempId = String(p.id);
-            if (p.id && !tempId.startsWith('0.') && !tempId.includes(Math.random().toString(36).substring(2, 5))) {
+            // New frontend projects have alphanumeric string IDs (e.g. "92uzltddj").
+            // Existing DB projects have numeric integer IDs.
+            if (p.id && typeof p.id === 'number') {
                 await ProjectApiService.updateProject(p.id, p);
             } else {
                 const res = await ProjectApiService.createProject(p);
