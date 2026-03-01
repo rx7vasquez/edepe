@@ -672,20 +672,44 @@ const RenderEngine = {
                                 <option value="Intensivo en acero">Intensivo en acero</option>
                             </select>
                         </div>
-                        <div style="flex:1; min-width:150px;">
-                            <label>Índice Mes Presupuesto (Base)</label>
-                            <input type="number" step="0.0001" name="reajusteIndex" value="100.0000" required>
+                        <div style="flex:1; min-width:210px;">
+                            <label>Mes y Año Presupuesto (Base)</label>
+                            <div style="display:flex; gap:5px;">
+                                <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
+                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                </select>
+                                <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
+                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div style="flex:1; min-width:100px;">
+                            <label>Índice Resultante</label>
+                            <input type="text" class="display-reajuste-index" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
                         </div>
                     </div>
 
                     <!-- IPC Container -->
                     <div id="form-new-reajuste-ipc" class="full-width" style="display:none; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
                         <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
-                        <div style="flex:1; min-width:150px;">
-                            <label>Índice Mes Presupuesto (Base IPC Points)</label>
-                            <input type="number" step="0.0001" name="reajusteIndex" value="100.0000">
+                        <div style="flex:1; min-width:210px;">
+                            <label>Mes y Año Base IPC</label>
+                            <div style="display:flex; gap:5px;">
+                                <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
+                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                </select>
+                                <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
+                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div style="flex:1; min-width:100px;">
+                            <label>Índice IPC Resultante</label>
+                            <input type="text" class="display-reajuste-index-ipc" value="0.00" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
                         </div>
                     </div>
+
+                    <input type="hidden" name="reajusteIndex" id="hidden-reajuste-index" value="100.0000">
 
                     <div class="full-width"><label>Tipo de Contrato</label>
                         <select name="contractType">
@@ -1353,17 +1377,44 @@ const RenderEngine = {
                                     <option value="${p.annexes.subtipo_obra || 'General'}">${p.annexes.subtipo_obra || 'General'}</option>
                                 </select>
                             </div>
+                            <div style="flex:1; min-width:210px;">
+                                <label>Mes y Año Presupuesto (Base)</label>
+                                <div style="display:flex; gap:5px;">
+                                    <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
+                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                    </select>
+                                    <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
+                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="flex:1; min-width:100px;">
+                                <label>Índice Resultante</label>
+                                <input type="text" class="display-reajuste-index" value="${p.annexes.reajusteIndex || '0.00'}" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
                             </div>
                         </div>
 
                         <!-- IPC Container -->
                         <div id="form-edit-reajuste-ipc" class="full-width" style="display: ${p.annexes.tipoReajuste === 'IPC' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(59,130,246,0.05); padding:15px; border-radius:10px; border:1px solid rgba(59,130,246,0.2); margin-bottom:10px;">
                             <h4 style="width:100%; margin:0 0 10px 0; color:var(--primary); font-size:0.9rem;"><i class="fas fa-chart-pie"></i> Configuración IPC</h4>
-                            <div style="flex:1; min-width:150px;">
-                                <label>Índice Mes Presupuesto (Base IPC Points)</label>
-                                <input type="number" step="0.0001" name="reajusteIndex" value="${p.annexes.reajusteIndex || 100.0000}">
+                            <div style="flex:1; min-width:210px;">
+                                <label>Mes y Año Base IPC</label>
+                                <div style="display:flex; gap:5px;">
+                                    <select name="baseMonthIpc" class="project-base-month-select" style="min-width: 100px;">
+                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                    </select>
+                                    <select name="baseYearIpc" class="project-base-year-select" style="min-width: 80px;">
+                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="flex:1; min-width:100px;">
+                                <label>Índice IPC Resultante</label>
+                                <input type="text" class="display-reajuste-index-ipc" value="${p.annexes.reajusteIndex || '0.00'}" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text); text-align:right; font-weight:bold;">
                             </div>
                         </div>
+                        
+                        <input type="hidden" name="reajusteIndex" id="hidden-reajuste-index" value="${p.annexes.reajusteIndex || 100.0000}">
                         <div class="full-width"><label>Tipo</label><select name="contractType">
                             <option value="Precios Unitarios" ${p.contractType === 'Precios Unitarios' ? 'selected' : ''}>Precios Unitarios</option>
                             <option value="Suma Alzada" ${p.contractType === 'Suma Alzada' ? 'selected' : ''}>Suma Alzada</option>

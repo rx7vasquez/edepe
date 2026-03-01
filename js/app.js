@@ -32,6 +32,20 @@ const App = {
                 this.clients = await ProjectApiService.getClients() || [];
                 this.users = await ProjectApiService.getUsers() || [];
 
+                // Preload Indices for Project Forms
+                try {
+                    const [polinomio, ipc] = await Promise.all([
+                        PolinomioApiService.getAll(),
+                        IpcApiService.getAll()
+                    ]);
+                    this.polinomioIndices = polinomio || [];
+                    this.ipcIndices = ipc || [];
+                } catch (idxError) {
+                    console.error("Error preloading indices:", idxError);
+                    this.polinomioIndices = [];
+                    this.ipcIndices = [];
+                }
+
                 if (AuthService.isSysAdmin()) {
                     this.companies = await ProjectApiService.getCompanies() || [];
                 } else {
@@ -603,11 +617,57 @@ const App = {
             if (e.target.id === 'financial-filter-month') { this.financialFilterMonth = e.target.value; this.render(); }
             if (e.target.id === 'financial-filter-retention') { this.financialFilterRetention = e.target.checked; this.render(); }
 
-            // Handle Tipo de Obra changes to populate Subtipo
-            if (e.target.id === 'indice-form-tipo' || e.target.id === 'project-tipo-reajuste') {
+            // Handle Dynamic Project Reajuste Configuration
+            if (['tipo_obra', 'subtipo_obra', 'baseMonth', 'baseYear', 'baseMonthIpc', 'baseYearIpc', 'tipoReajuste', 'currency'].includes(e.target.name)) {
+                const form = e.target.closest('form');
+                if (form && (form.id === 'project-form' || form.id === 'edit-project-form')) {
+
+                    // Update Subtipo options if Tipo changed
+                    if (e.target.name === 'tipo_obra') {
+                        const tipo = form.querySelector('[name="tipo_obra"]').value;
+                        const subtipos = this.MOP_SUBTYPES[tipo] || ['General'];
+                        const subtipoSelect = form.querySelector('[name="subtipo_obra"]');
+                        if (subtipoSelect) {
+                            subtipoSelect.innerHTML = subtipos.map(st => `<option value="${st}">${st}</option>`).join('');
+                        }
+                    }
+
+                    // Calculate Polinomio
+                    const pTipo = form.querySelector('[name="tipo_obra"]')?.value || '';
+                    const pSub = form.querySelector('[name="subtipo_obra"]')?.value || '';
+                    const pMonth = parseInt(form.querySelector('[name="baseMonth"]')?.value || new Date().getMonth() + 1);
+                    const pYear = parseInt(form.querySelector('[name="baseYear"]')?.value || new Date().getFullYear());
+                    const mR = (this.polinomioIndices || []).find(i =>
+                        String(i.tipo_obra || '').trim() === String(pTipo).trim() &&
+                        String(i.subtipo_obra || '').trim() === String(pSub).trim() &&
+                        parseInt(i.mes) === pMonth &&
+                        parseInt(i.ano) === pYear
+                    );
+                    const mVal = mR ? parseFloat(mR.valor) : 0;
+                    const mDisp = form.querySelector('.display-reajuste-index');
+                    if (mDisp) mDisp.value = mVal > 0 ? mVal.toFixed(4) : "No Disponible";
+
+                    // Calculate IPC
+                    const iMonth = parseInt(form.querySelector('[name="baseMonthIpc"]')?.value || new Date().getMonth() + 1);
+                    const iYear = parseInt(form.querySelector('[name="baseYearIpc"]')?.value || new Date().getFullYear());
+                    const iR = (this.ipcIndices || []).find(i => parseInt(i.mes) === iMonth && parseInt(i.ano) === iYear);
+                    const iVal = iR ? parseFloat(iR.valor) : 0;
+                    const iDisp = form.querySelector('.display-reajuste-index-ipc');
+                    if (iDisp) iDisp.value = iVal > 0 ? iVal.toFixed(4) : "No Disponible";
+
+                    // Save to hidden input based on current active tab
+                    const tipoReajuste = form.querySelector('[name="tipoReajuste"]')?.value;
+                    const hidden = form.querySelector('input[name="reajusteIndex"]');
+                    if (hidden) {
+                        hidden.value = tipoReajuste === 'IPC' ? iVal : mVal;
+                    }
+                }
+            }
+
+            if (e.target.id === 'indice-form-tipo') {
                 const tipo = e.target.value;
                 const subtipos = this.MOP_SUBTYPES[tipo] || ['General'];
-                const subtipoSelect = document.getElementById(e.target.id === 'indice-form-tipo' ? 'indice-form-subtipo' : 'project-subtipo-reajuste');
+                const subtipoSelect = document.getElementById('indice-form-subtipo');
                 if (subtipoSelect) {
                     subtipoSelect.innerHTML = subtipos.map(st => `<option value="${st}">${st}</option>`).join('');
                 }
