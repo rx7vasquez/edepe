@@ -89,7 +89,15 @@ const App = {
                 const res = await ProjectApiService.createProject(p);
                 p.id = res.id;
             }
-        } catch (e) { console.error("Error API Project", e); alert("Error guardando proyecto."); }
+        } catch (e) {
+            console.error("Error API Project", e);
+            let errMsg = e.message;
+            try {
+                const errBody = await e.response?.json();
+                if (errBody && errBody.error) errMsg = errBody.error;
+            } catch (e2) { }
+            alert("Error guardando proyecto: " + errMsg);
+        }
     },
 
     async saveCompanyState(companyData) {
