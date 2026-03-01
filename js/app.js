@@ -637,12 +637,22 @@ const App = {
                     const pSub = form.querySelector('[name="subtipo_obra"]')?.value || '';
                     const pMonth = parseInt(form.querySelector('[name="baseMonth"]')?.value || new Date().getMonth() + 1);
                     const pYear = parseInt(form.querySelector('[name="baseYear"]')?.value || new Date().getFullYear());
-                    const mR = (this.polinomioIndices || []).find(i =>
-                        String(i.tipo_obra || '').trim() === String(pTipo).trim() &&
-                        String(i.subtipo_obra || '').trim() === String(pSub).trim() &&
-                        parseInt(i.mes) === pMonth &&
-                        parseInt(i.ano) === pYear
-                    );
+                    const mR = (this.polinomioIndices || []).find(i => {
+                        let origTipo = String(i.tipo_obra || '').trim();
+                        let origSub = String(i.subtipo_obra || '').trim();
+                        try {
+                            if (i.datos_extra) {
+                                const extra = JSON.parse(i.datos_extra);
+                                origTipo = String(extra.originalTipo || origTipo).trim();
+                                origSub = String(extra.originalSubtipo || origSub).trim();
+                            }
+                        } catch (e) { }
+
+                        return origTipo === String(pTipo).trim() &&
+                            origSub === String(pSub).trim() &&
+                            parseInt(i.mes) === pMonth &&
+                            parseInt(i.ano) === pYear;
+                    });
                     const mVal = mR ? parseFloat(mR.indice || mR.valor) : 0;
                     const mDisp = form.querySelector('.display-reajuste-index');
                     if (mDisp) mDisp.value = mVal > 0 ? mVal.toFixed(4) : "No Disponible";
