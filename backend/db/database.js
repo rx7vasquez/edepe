@@ -142,6 +142,7 @@ async function initDb() {
             items TEXT DEFAULT '[]',
             advances TEXT DEFAULT '[]',
             edps TEXT DEFAULT '[]',
+            extra_data TEXT,
             FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
         )`;
 
@@ -163,6 +164,17 @@ async function initDb() {
     await query(createUsers);
     await query(createClients);
     await query(createProjects);
+
+    // Add extra_data column seamlessly if it doesn't exist
+    try {
+        if (IS_POSTGRES) {
+            await query('ALTER TABLE projects ADD COLUMN extra_data TEXT;');
+        } else {
+            // SQLite ignores errors on ALTER if we just catch it
+            await query('ALTER TABLE projects ADD COLUMN extra_data TEXT;');
+        }
+    } catch (e) { /* Column likely exists */ }
+
     console.log('✅ Base de datos SaaS inicializada.');
 }
 

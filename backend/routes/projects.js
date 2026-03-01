@@ -6,6 +6,77 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
+function mapDBToProject(row) {
+    let extra = {};
+    try { extra = JSON.parse(row.extra_data || '{}'); } catch (e) { }
+
+    return {
+        id: row.id,
+        name: row.nombre || '',
+        contractId: row.codigo || '',
+        client: row.clientId || '',
+        awardDate: extra.awardDate || '',
+        startDate: row.fecha_inicio || '',
+        term: row.plazo_dias || 365,
+        contractType: extra.contractType || 'Precios Unitarios',
+        codigoSafi: extra.codigoSafi || '',
+        codigoBip: extra.codigoBip || '',
+        items: JSON.parse(row.items || '[]'),
+        progressEntries: JSON.parse(row.advances || '[]'),
+        edps: JSON.parse(row.edps || '[]'),
+        currency: row.moneda || 'CLP',
+        annexes: {
+            retentionRate: row.retention_porcentaje !== null ? row.retention_porcentaje : 0.10,
+            retentionCapRate: row.retention_tope !== null ? row.retention_tope : 0.05,
+            advanceTotal: row.anticipo_porcentaje || 0,
+            tipo_obra: row.tipo_obra || '',
+            subtipo_obra: row.subtipo_obra || '',
+            tipoReajuste: row.tipo_reajuste || 'Polinomio',
+            reajusteIndex: extra.reajusteIndex || 1.000
+        },
+        baselineItems: extra.baselineItems || null,
+        baselineLockedAt: extra.baselineLockedAt || null,
+        contractModifications: extra.contractModifications || []
+    };
+}
+
+function mapProjectToDBParams(p) {
+    const annexes = p.annexes || {};
+    const extraData = {
+        awardDate: p.awardDate || '',
+        codigoSafi: p.codigoSafi || '',
+        codigoBip: p.codigoBip || '',
+        contractType: p.contractType || 'Precios Unitarios',
+        reajusteIndex: annexes.reajusteIndex,
+        baselineItems: p.baselineItems || null,
+        baselineLockedAt: p.baselineLockedAt || null,
+        contractModifications: p.contractModifications || []
+    };
+
+    return [
+        p.contractId || '',                      // codigo ($2)
+        p.name || 'Proyecto Sin Nombre',         // nombre ($3)
+        '',                                      // descripcion ($4)
+        p.client || null,                        // clientId ($5)
+        annexes.tipo_obra || '',                 // tipo_obra ($6)
+        annexes.subtipo_obra || '',              // subtipo_obra ($7)
+        'Activo',                                // estado ($8)
+        0, 0, 0,                                 // presupuesto totals ($9, $10, $11)
+        parseInt(p.term) || 0,                   // plazo_dias ($12)
+        p.startDate || p.awardDate || '',        // fecha_inicio ($13)
+        parseFloat(annexes.advanceTotal) || 0,   // anticipo_porcentaje ($14)
+        parseFloat(annexes.retentionRate) || 0,  // retencion_porcentaje ($15)
+        parseFloat(annexes.retentionCapRate) || null, // retencion_tope ($16)
+        1,                                       // proporcion_reajuste_mandante ($17)
+        annexes.tipoReajuste || 'None',          // tipo_reajuste ($18)
+        p.currency || 'CLP',                     // moneda ($19)
+        JSON.stringify(p.items || []),           // items ($20)
+        JSON.stringify(p.progressEntries || []), // advances ($21)
+        JSON.stringify(p.edps || []),            // edps ($22)
+        JSON.stringify(extraData)                // extra_data ($23)
+    ];
+}
+
 // GET - Obtener todos los proyectos de la empresa del usuario
 router.get('/', async (req, res) => {
     try {
@@ -35,12 +106,7 @@ router.get('/', async (req, res) => {
         const projects = await query(sql, params);
 
         // Parsear JSON strings
-        const parsedProjects = projects.map(p => ({
-            ...p,
-            items: JSON.parse(p.items || '[]'),
-            advances: JSON.parse(p.advances || '[]'),
-            edps: JSON.parse(p.edps || '[]')
-        }));
+        const parsedProjects = projects.map(mapDBToProject);
 
         res.json(parsedProjects);
     } catch (error) {
@@ -55,10 +121,7 @@ router.get('/:id', async (req, res) => {
         const result = await query('SELECT * FROM projects WHERE id = $1 AND company_id = $2', [req.params.id, req.user.companyId]);
         if (result.length === 0) return res.status(404).json({ error: 'Proyecto no encontrado' });
 
-        const p = result[0];
-        p.items = JSON.parse(p.items || '[]');
-        p.advances = JSON.parse(p.advances || '[]');
-        p.edps = JSON.parse(p.edps || '[]');
+        const p = mapDBToProject(result[0]);
 
         res.json(p);
     } catch (error) {
@@ -78,19 +141,12 @@ router.post('/', async (req, res) => {
                 company_id, codigo, nombre, descripcion, clientId, tipo_obra, subtipo_obra,
                 estado, presupuesto_total, presupuesto_gastos_generales, presupuesto_utilidades,
                 plazo_dias, fecha_inicio, anticipo_porcentaje, retencion_porcentaje, retencion_tope,
-                proporcion_reajuste_mandante, tipo_reajuste, moneda, items, advances, edps
+                proporcion_reajuste_mandante, tipo_reajuste, moneda, items, advances, edps, extra_data
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
             ) ${IS_POSTGRES ? 'RETURNING *' : ''}
         `;
-        const params = [
-            req.user.companyId, p.codigo, p.nombre, p.descripcion || '', p.clientId || null,
-            p.tipo_obra || '', p.subtipo_obra || '', p.estado || 'Activo', p.presupuesto_total || 0,
-            p.presupuesto_gastos_generales || 0, p.presupuesto_utilidades || 0, p.plazo_dias || 0,
-            p.fecha_inicio || '', p.anticipo_porcentaje || 0, p.retencion_porcentaje || 0, p.retencion_tope || null,
-            p.proporcion_reajuste_mandante || 1, p.tipo_reajuste || 'None', p.moneda || 'CLP',
-            JSON.stringify(p.items || []), JSON.stringify(p.advances || []), JSON.stringify(p.edps || [])
-        ];
+        const params = [req.user.companyId, ...mapProjectToDBParams(p)];
 
         const result = await query(sql, params);
         res.status(201).json(IS_POSTGRES ? result[0] : { id: result[0].id, message: 'Creado' });
@@ -114,17 +170,10 @@ router.put('/:id', async (req, res) => {
                 codigo=$1, nombre=$2, descripcion=$3, clientId=$4, tipo_obra=$5, subtipo_obra=$6,
                 estado=$7, presupuesto_total=$8, presupuesto_gastos_generales=$9, presupuesto_utilidades=$10,
                 plazo_dias=$11, fecha_inicio=$12, anticipo_porcentaje=$13, retencion_porcentaje=$14, retencion_tope=$15,
-                proporcion_reajuste_mandante=$16, tipo_reajuste=$17, moneda=$18, items=$19, advances=$20, edps=$21
-            WHERE id=$22 AND company_id=$23
+                proporcion_reajuste_mandante=$16, tipo_reajuste=$17, moneda=$18, items=$19, advances=$20, edps=$21, extra_data=$22
+            WHERE id=$23 AND company_id=$24
         `;
-        const params = [
-            p.codigo, p.nombre, p.descripcion, p.clientId, p.tipo_obra, p.subtipo_obra,
-            p.estado, p.presupuesto_total, p.presupuesto_gastos_generales, p.presupuesto_utilidades,
-            p.plazo_dias, p.fecha_inicio, p.anticipo_porcentaje, p.retencion_porcentaje, p.retencion_tope,
-            p.proporcion_reajuste_mandante, p.tipo_reajuste, p.moneda,
-            JSON.stringify(p.items || []), JSON.stringify(p.advances || []), JSON.stringify(p.edps || []),
-            req.params.id, req.user.companyId
-        ];
+        const params = [...mapProjectToDBParams(p), req.params.id, req.user.companyId];
 
         await query(sql, params);
         res.json({ message: 'Proyecto actualizado' });
