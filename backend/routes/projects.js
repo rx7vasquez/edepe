@@ -14,7 +14,7 @@ function mapDBToProject(row) {
         id: row.id,
         name: row.nombre || '',
         contractId: row.codigo || '',
-        client: row.clientId || '',
+        client: extra.clientName || row.clientId || '',
         awardDate: extra.awardDate || '',
         startDate: row.fecha_inicio || '',
         term: row.plazo_dias || 365,
@@ -42,6 +42,17 @@ function mapDBToProject(row) {
 
 function mapProjectToDBParams(p) {
     const annexes = p.annexes || {};
+
+    let clientIdParam = null;
+    let clientNameParam = null;
+
+    // Safely parse client into integer ID, or save it as name string if it was just texted.
+    if (p.client && !isNaN(parseInt(p.client))) {
+        clientIdParam = parseInt(p.client);
+    } else if (p.client) {
+        clientNameParam = p.client;
+    }
+
     const extraData = {
         awardDate: p.awardDate || '',
         codigoSafi: p.codigoSafi || '',
@@ -50,14 +61,15 @@ function mapProjectToDBParams(p) {
         reajusteIndex: annexes.reajusteIndex,
         baselineItems: p.baselineItems || null,
         baselineLockedAt: p.baselineLockedAt || null,
-        contractModifications: p.contractModifications || []
+        contractModifications: p.contractModifications || [],
+        clientName: clientNameParam
     };
 
     return [
         p.contractId || '',                      // codigo ($2)
         p.name || 'Proyecto Sin Nombre',         // nombre ($3)
         '',                                      // descripcion ($4)
-        p.client || null,                        // clientId ($5)
+        clientIdParam,                           // clientId ($5)
         annexes.tipo_obra || '',                 // tipo_obra ($6)
         annexes.subtipo_obra || '',              // subtipo_obra ($7)
         'Activo',                                // estado ($8)
