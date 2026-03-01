@@ -648,10 +648,10 @@ const App = {
                             }
                         } catch (e) { }
 
-                        return origTipo === String(pTipo).trim() &&
-                            origSub === String(pSub).trim() &&
+                        return (origTipo === String(pTipo).trim() || String(i.tipo_obra || '').trim() === String(pTipo).trim()) &&
+                            (origSub === String(pSub).trim() || String(i.subtipo_obra || '').trim() === String(pSub).trim()) &&
                             parseInt(i.mes) === pMonth &&
-                            parseInt(i.ano) === pYear;
+                            parseInt(i.anio) === pYear;
                     });
                     const mVal = mR ? parseFloat(mR.indice || mR.valor) : 0;
                     const mDisp = form.querySelector('.display-reajuste-index');
@@ -660,7 +660,7 @@ const App = {
                     // Calculate IPC
                     const iMonth = parseInt(form.querySelector('[name="baseMonthIpc"]')?.value || new Date().getMonth() + 1);
                     const iYear = parseInt(form.querySelector('[name="baseYearIpc"]')?.value || new Date().getFullYear());
-                    const iR = (this.ipcIndices || []).find(i => parseInt(i.mes) === iMonth && parseInt(i.ano) === iYear);
+                    const iR = (this.ipcIndices || []).find(i => parseInt(i.mes) === iMonth && parseInt(i.anio) === iYear);
                     const iVal = iR ? parseFloat(iR.valor) : 0;
                     const iDisp = form.querySelector('.display-reajuste-index-ipc');
                     if (iDisp) iDisp.value = iVal > 0 ? iVal.toFixed(4) : "No Disponible";
