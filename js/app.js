@@ -235,6 +235,9 @@ const App = {
     },
 
     setupEvents() {
+        if (this.eventsAttached) return;
+        this.eventsAttached = true;
+
         window.App = this;
 
         document.addEventListener('click', async (e) => {
@@ -271,6 +274,29 @@ const App = {
                 this.currentView = viewAttr;
                 this.currentProjectId = target.dataset.projectId || null;
                 this.render();
+                return;
+            }
+
+            if (target.classList.contains('btn-delete-client')) {
+                const index = parseInt(target.dataset.index);
+                const client = this.clients[index];
+                if (!client) return;
+
+                this.showModal('confirm', {
+                    title: 'Eliminar Mandante',
+                    message: `¿Está seguro de que desea eliminar el mandante "${client.name}"?`,
+                    onConfirm: async () => {
+                        this.clients.splice(index, 1);
+                        if (client.id) {
+                            try {
+                                await ProjectApiService.deleteClient(client.id);
+                            } catch (e) {
+                                console.error("Error al eliminar el cliente del backend", e);
+                            }
+                        }
+                        this.render();
+                    }
+                });
                 return;
             }
 
