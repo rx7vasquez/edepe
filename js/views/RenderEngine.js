@@ -667,7 +667,9 @@ const RenderEngine = {
                             <select name="subtipo_obra" id="project-subtipo-reajuste">
                                 <option value="General">General</option>
                                 <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
-                <div style="flex:1; min-width:150px;">
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:150px;">
                             <label>Índice Mes Presupuesto (Base)</label>
                             <input type="number" step="0.0001" name="reajusteIndex" value="100.0000" required>
                         </div>

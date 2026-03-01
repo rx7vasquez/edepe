@@ -560,9 +560,9 @@ const App = {
                     this.showModal('confirm', {
                         title: 'Eliminar Partida',
                         message: `¿Está seguro de que desea eliminar la partida "${item.id}: ${item.name}"?`,
-                        onConfirm: () => {
+                        onConfirm: async () => {
                             p.items = p.items.filter(i => i.id !== item.id);
-                            this.saveProjectState(p);
+                            await this.saveProjectState(p);
                             this.render();
                         }
                     });
@@ -843,18 +843,33 @@ const App = {
             }
 
             if (e.target.id === 'project-form') {
-                const newProject = new Project({ ...data, currency: data.currency });
-                newProject.annexes.retentionRate = parseFloat(data.retentionRate) || 0.1;
-                newProject.annexes.retentionCapRate = parseFloat(data.retentionCapRate) || 0.05;
-                newProject.annexes.advanceTotal = parseFloat(data.advanceTotal) || 0;
-                newProject.annexes.reajusteIndex = parseFloat(data.reajusteIndex) || 100.0000;
-                newProject.annexes.tipoReajuste = data.currency === 'UF' ? 'Ninguno' : (data.tipoReajuste || 'Polinomio');
-                newProject.annexes.tipo_obra = data.tipo_obra || 'Edificación Pública';
-                newProject.annexes.subtipo_obra = data.subtipo_obra || 'General';
-                this.projects.push(newProject);
-                this.saveProjectState(p);
-                this.currentView = 'proyectos';
-                this.render();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                btn.disabled = true;
+
+                try {
+                    const newProject = new Project({ ...data, currency: data.currency });
+                    newProject.annexes.retentionRate = parseFloat(data.retentionRate) || 0.1;
+                    newProject.annexes.retentionCapRate = parseFloat(data.retentionCapRate) || 0.05;
+                    newProject.annexes.advanceTotal = parseFloat(data.advanceTotal) || 0;
+                    newProject.annexes.reajusteIndex = parseFloat(data.reajusteIndex) || 100.0000;
+                    newProject.annexes.tipoReajuste = data.currency === 'UF' ? 'Ninguno' : (data.tipoReajuste || 'Polinomio');
+                    newProject.annexes.tipo_obra = data.tipo_obra || 'Edificación Pública';
+                    newProject.annexes.subtipo_obra = data.subtipo_obra || 'General';
+
+                    await this.saveProjectState(newProject);
+                    this.projects.push(newProject);
+
+                    document.getElementById('global-modal').style.display = 'none';
+                    this.currentView = 'proyectos';
+                    this.render();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al crear el proyecto.");
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }
             }
 
             if (e.target.id === 'edit-project-form') {
@@ -873,20 +888,32 @@ const App = {
             }
 
             if (e.target.id === 'item-form') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
-                const newItem = {
-                    id: data.itemId,
-                    name: data.name,
-                    unit: data.unit,
-                    classification: data.classification,
-                    quantity: parseFloat(data.quantity),
-                    price: parseFloat(data.price),
-                    itemType: data.itemType || null  // null = pre-baseline (will be 'Original' when baseline locked)
-                };
-                p.items.push(newItem);
-                this.saveProjectState(p);
-                document.getElementById('global-modal').style.display = 'none';
-                this.render();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                btn.disabled = true;
+
+                try {
+                    const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                    const newItem = {
+                        id: data.itemId,
+                        name: data.name,
+                        unit: data.unit,
+                        classification: data.classification,
+                        quantity: parseFloat(data.quantity),
+                        price: parseFloat(data.price),
+                        itemType: data.itemType || null
+                    };
+                    p.items.push(newItem);
+                    await this.saveProjectState(p);
+                    document.getElementById('global-modal').style.display = 'none';
+                    this.render();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error guardando la partida.");
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }
             }
 
             if (e.target.id === 'edit-item-form') {

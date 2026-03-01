@@ -65,6 +65,16 @@
         .mop-form-grid .full-width {
             grid-column: span 2;
         }
+
+        @media (max-width: 600px) {
+            .mop-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mop-form-grid .full-width {
+                grid-column: span 1;
+            }
+        }
     </style>
 </head>
 
