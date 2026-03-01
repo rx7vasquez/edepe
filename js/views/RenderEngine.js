@@ -614,7 +614,7 @@ const RenderEngine = {
                     <div>
                         <label>Mandante</label>
                         <select name="client" required>
-                            ${clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
+                            ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select>
                     </div>
                     <div><label>SAFI</label><input type="text" name="codigoSafi"></div>
@@ -1334,7 +1334,7 @@ const RenderEngine = {
                         <div>
                             <label>Mandante</label>
                             <select name="client" required>
-                                ${clients.map(c => `<option value="${c.name}" ${p.client === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+                                ${clients.map(c => `<option value="${c.id}" ${(p.client == c.id || p.client === c.name) ? 'selected' : ''}>${c.name}</option>`).join('')}
                             </select>
                         </div>
                         <div><label>SAFI</label><input type="text" name="codigoSafi" value="${p.codigoSafi || ''}"></div>
