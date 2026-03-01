@@ -643,7 +643,7 @@ const App = {
                         parseInt(i.mes) === pMonth &&
                         parseInt(i.ano) === pYear
                     );
-                    const mVal = mR ? parseFloat(mR.valor) : 0;
+                    const mVal = mR ? parseFloat(mR.indice || mR.valor) : 0;
                     const mDisp = form.querySelector('.display-reajuste-index');
                     if (mDisp) mDisp.value = mVal > 0 ? mVal.toFixed(4) : "No Disponible";
 
