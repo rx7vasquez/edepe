@@ -667,6 +667,9 @@ const RenderEngine = {
                             <select name="subtipo_obra" id="project-subtipo-reajuste">
                                 <option value="General">General</option>
                                 <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
+                                <option value="Intensivo en asfalto">Intensivo en asfalto</option>
+                                <option value="Intensivo en cemento">Intensivo en cemento</option>
+                                <option value="Intensivo en acero">Intensivo en acero</option>
                             </select>
                         </div>
                         <div style="flex:1; min-width:150px;">
