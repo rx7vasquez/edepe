@@ -628,15 +628,15 @@ const App = {
                         const subtipos = this.MOP_SUBTYPES[tipo] || ['General'];
                         const subtipoSelect = form.querySelector('[name="subtipo_obra"]');
                         if (subtipoSelect) {
-                            subtipoSelect.innerHTML = subtipos.map(st => `<option value="${st}">${st}</option>`).join('');
+                            subtipoSelect.innerHTML = `<option value="" disabled selected>Seleccione...</option>` + subtipos.map(st => `<option value="${st}">${st}</option>`).join('');
                         }
                     }
 
                     // Calculate Polinomio
                     const pTipo = form.querySelector('[name="tipo_obra"]')?.value || '';
                     const pSub = form.querySelector('[name="subtipo_obra"]')?.value || '';
-                    const pMonth = parseInt(form.querySelector('[name="baseMonth"]')?.value || new Date().getMonth() + 1);
-                    const pYear = parseInt(form.querySelector('[name="baseYear"]')?.value || new Date().getFullYear());
+                    const pMonth = parseInt(form.querySelector('[name="baseMonth"]')?.value);
+                    const pYear = parseInt(form.querySelector('[name="baseYear"]')?.value);
                     const mR = (this.polinomioIndices || []).find(i => {
                         let origTipo = String(i.tipo_obra || '').trim();
                         let origSub = String(i.subtipo_obra || '').trim();
@@ -658,8 +658,8 @@ const App = {
                     if (mDisp) mDisp.value = mVal > 0 ? mVal.toFixed(4) : "No Disponible";
 
                     // Calculate IPC
-                    const iMonth = parseInt(form.querySelector('[name="baseMonthIpc"]')?.value || new Date().getMonth() + 1);
-                    const iYear = parseInt(form.querySelector('[name="baseYearIpc"]')?.value || new Date().getFullYear());
+                    const iMonth = parseInt(form.querySelector('[name="baseMonthIpc"]')?.value);
+                    const iYear = parseInt(form.querySelector('[name="baseYearIpc"]')?.value);
                     const iR = (this.ipcIndices || []).find(i => parseInt(i.mes) === iMonth && parseInt(i.anio) === iYear);
                     const iVal = iR ? parseFloat(iR.valor) : 0;
                     const iDisp = form.querySelector('.display-reajuste-index-ipc');

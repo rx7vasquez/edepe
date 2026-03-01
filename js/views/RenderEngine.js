@@ -652,10 +652,14 @@ const RenderEngine = {
 
                     <!-- MOP Polinomio Container -->
                     <div id="form-new-reajuste-mop" class="full-width" style="display:flex; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
-                        <h4 style="width:100%; margin:0 0 10px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                        <div style="width:100%;">
+                            <h4 style="margin:0 0 5px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                            <p style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-color); opacity:0.7;">Información contenida en "anexo complementario".</p>
+                        </div>
                         <div style="flex:1; min-width:200px;">
                             <label>Tipo de Obra</label>
                             <select name="tipo_obra" id="project-tipo-reajuste">
+                                <option value="" disabled selected>Seleccione...</option>
                                 <option value="Infraestructura vial y portuaria">Infraestructura vial y portuaria</option>
                                 <option value="Infraestructura Hidráulica">Infraestructura Hidráulica</option>
                                 <option value="Infraestructura aeroportuaria">Infraestructura aeroportuaria</option>
@@ -665,6 +669,7 @@ const RenderEngine = {
                         <div style="flex:1; min-width:200px;">
                             <label>Subtipo de Obra</label>
                             <select name="subtipo_obra" id="project-subtipo-reajuste">
+                                <option value="" disabled selected>Seleccione...</option>
                                 <option value="General">General</option>
                                 <option value="Intensivo en mano de obra">Intensivo en mano de obra</option>
                                 <option value="Intensivo en asfalto">Intensivo en asfalto</option>
@@ -676,10 +681,12 @@ const RenderEngine = {
                             <label>Mes y Año Presupuesto (Base)</label>
                             <div style="display:flex; gap:5px;">
                                 <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
-                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                    <option value="" disabled selected>Mes</option>
+                                    ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}">${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
                                 </select>
                                 <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
-                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                    <option value="" disabled selected>Año</option>
+                                    ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}">${y}</option>`).join('')}
                                 </select>
                             </div>
                         </div>
@@ -1361,10 +1368,14 @@ const RenderEngine = {
 
                         <!-- MOP Polinomio Container -->
                         <div id="form-edit-reajuste-mop" class="full-width" style="display: ${(p.annexes.tipoReajuste || 'Polinomio') === 'Polinomio' && p.currency !== 'UF' ? 'flex' : 'none'}; gap:10px; flex-wrap:wrap; background:rgba(255,152,0,0.05); padding:15px; border-radius:10px; border:1px solid rgba(255,152,0,0.2); margin-bottom:10px;">
-                            <h4 style="width:100%; margin:0 0 10px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                            <div style="width:100%;">
+                                <h4 style="margin:0 0 5px 0; color:var(--accent); font-size:0.9rem;"><i class="fas fa-hammer"></i> Configuración Polinómica</h4>
+                                <p style="margin:0 0 10px 0; font-size:0.8rem; color:var(--text-color); opacity:0.7;">Información contenida en "anexo complementario".</p>
+                            </div>
                             <div style="flex:1; min-width:200px;">
                                 <label>Tipo de Obra</label>
                                 <select name="tipo_obra" required id="project-tipo-reajuste">
+                                    <option value="" disabled ${!p.annexes.tipo_obra ? 'selected' : ''}>Seleccione...</option>
                                     <option value="Infraestructura vial y portuaria" ${p.annexes.tipo_obra === 'Infraestructura vial y portuaria' ? 'selected' : ''}>Infraestructura vial y portuaria</option>
                                     <option value="Infraestructura Hidráulica" ${p.annexes.tipo_obra === 'Infraestructura Hidráulica' ? 'selected' : ''}>Infraestructura Hidráulica</option>
                                     <option value="Infraestructura aeroportuaria" ${p.annexes.tipo_obra === 'Infraestructura aeroportuaria' ? 'selected' : ''}>Infraestructura aeroportuaria</option>
@@ -1374,17 +1385,20 @@ const RenderEngine = {
                             <div style="flex:1; min-width:200px;">
                                 <label>Subtipo de Obra</label>
                                 <select name="subtipo_obra" required id="project-subtipo-reajuste">
-                                    <option value="${p.annexes.subtipo_obra || 'General'}">${p.annexes.subtipo_obra || 'General'}</option>
+                                    <option value="" disabled ${!p.annexes.subtipo_obra ? 'selected' : ''}>Seleccione...</option>
+                                    ${p.annexes.subtipo_obra ? `<option value="${p.annexes.subtipo_obra}" selected>${p.annexes.subtipo_obra}</option>` : ''}
                                 </select>
                             </div>
                             <div style="flex:1; min-width:210px;">
                                 <label>Mes y Año Presupuesto (Base)</label>
                                 <div style="display:flex; gap:5px;">
                                     <select name="baseMonth" class="project-base-month-select" style="min-width: 100px;">
-                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m === new Date().getMonth() + 1 ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
+                                        <option value="" disabled ${!p.annexes.baseMonth ? 'selected' : ''}>Mes</option>
+                                        ${Array.from({ length: 12 }, (_, i) => i + 1).map(m => `<option value="${m}" ${m == p.annexes.baseMonth ? 'selected' : ''}>${new Date(2000, m - 1).toLocaleString('es-ES', { month: 'short' }).toUpperCase()}</option>`).join('')}
                                     </select>
                                     <select name="baseYear" class="project-base-year-select" style="min-width: 80px;">
-                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y === new Date().getFullYear() ? 'selected' : ''}>${y}</option>`).join('')}
+                                        <option value="" disabled ${!p.annexes.baseYear ? 'selected' : ''}>Año</option>
+                                        ${Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => `<option value="${y}" ${y == p.annexes.baseYear ? 'selected' : ''}>${y}</option>`).join('')}
                                     </select>
                                 </div>
                             </div>
