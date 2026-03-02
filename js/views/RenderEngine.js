@@ -1478,7 +1478,7 @@ const RenderEngine = {
                     </select>
                 </div>
                 <div><label>Fecha de Emisión</label><input type="date" name="date" value="${new Date().toISOString().split('T')[0]}" required></div>
-                ${p.currency === 'UF' ? '<input type="hidden" name="reajuste" value="0">' : '<div><label>Reajuste (+/-)</label><input type="number" step="0.01" name="reajuste" value="0"></div>'}
+                ${p.currency === 'UF' ? '<input type="hidden" name="reajuste" value="0">' : '<div><label>Reajuste (+/-)</label><input type="text" name="reajuste" value="(Se calculará al emitir)" readonly style="background:var(--bg); border:1px dashed var(--border); color:var(--text-muted); cursor:not-allowed;"></div>'}
             </div>
 
             <!-- Sección Avance de Obra -->

@@ -1121,8 +1121,11 @@
                     // ====== CÁLCULO DE REAJUSTE ======
                     const tipoReajuste = p.currency === 'UF' ? 'Ninguno' : (p.annexes.tipoReajuste || 'Polinomio');
                     const edpDate = new Date(data.date || new Date());
-                    const edpMes = edpDate.getMonth() + 1;
-                    const edpAnio = edpDate.getFullYear();
+
+                    // MOP Rules: The applicable index is from the month prior to the EDP date.
+                    const reajusteDate = new Date(edpDate.getFullYear(), edpDate.getMonth() - 1, 1);
+                    const edpMes = reajusteDate.getMonth() + 1;
+                    const edpAnio = reajusteDate.getFullYear();
 
                     if (tipoReajuste === 'Ninguno') {
                         r = 0; // No hay reajuste
@@ -1259,7 +1262,7 @@
             const type = typeSelector.value;
             let totalBruto = 0;
             let retention = 0;
-            const reajuste = p.currency === 'UF' ? 0 : (parseFloat(document.querySelector('input[name="reajuste"]').value) || 0);
+            const reajuste = 0; // Calculado en el servidor/handler async al generar el pago
 
             if (type === 'Avance de Obra') {
                 document.querySelectorAll('.edp-item-input').forEach(inp => {
@@ -1288,10 +1291,16 @@
 
             document.getElementById('edp-total-bruto').textContent = formatCurrency(totalBruto, p.currency);
             document.getElementById('edp-total-retention').textContent = '-' + formatCurrency(retention, p.currency);
-            if (reajusteEl) reajusteEl.textContent = formatCurrency(reajuste, p.currency);
+            if (reajusteEl) {
+                if (type === 'Avance de Obra' && p.currency !== 'UF' && p.annexes.tipoReajuste !== 'Ninguno') {
+                    reajusteEl.innerHTML = '<span style="font-size:0.8rem; font-style:italic;">(Calculado al emitir)</span>';
+                } else {
+                    reajusteEl.textContent = formatCurrency(reajuste, p.currency);
+                }
+            }
             document.getElementById('edp-total-liquido').textContent = formatCurrency(liquido, p.currency);
 
-            if (btn) btn.disabled = (totalBruto <= 0 && reajuste === 0 && type !== 'Avance de Obra');
+            if (btn) btn.disabled = (totalBruto <= 0 && type !== 'Avance de Obra');
         };
 
         typeSelector.addEventListener('change', () => {
