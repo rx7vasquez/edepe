@@ -1596,8 +1596,7 @@ const RenderEngine = {
                                 <option value="Devolución de Retenciones">Devolución de Retenciones</option>
                             </select>
                         </div>
-                        <div><label>Fecha de Emisión</label><input type="date" name="date" value="${new Date().toISOString().split('T')[0]}" required></div>
-                        ${p.currency === 'UF' ? '<input type="hidden" name="reajuste" value="0">' : '<div><label>Reajuste (+/-)</label><input type="number" step="0.01" name="reajuste" value="0"></div>'}
+                        <div class="full-width"><label>Fecha de Emisión</label><input type="date" name="date" value="${new Date().toISOString().split('T')[0]}" required></div>
                     </div>
 
                     <!-- Sección Avance de Obra -->
