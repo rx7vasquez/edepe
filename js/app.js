@@ -1059,15 +1059,38 @@
 
             if (e.target.id === 'progress-form') {
                 const p = this.projects.find(pj => pj.id == this.currentProjectId);
-                p.progressEntries.push({
-                    itemId: data.itemId,
-                    quantity: parseFloat(data.quantity),
-                    date: new Date().toISOString(),
-                    registeredBy: this.currentUser ? `${this.currentUser.name} ${this.currentUser.lastName}` : 'Sistema'
-                });
-                this.saveProjectState(p);
-                document.getElementById('global-modal').style.display = 'none';
-                this.render();
+                if (!p) { alert('Error: Proyecto no encontrado en memoria.'); return; }
+                const executedQty = (p.progressEntries || [])
+                    .filter(entry => entry.itemId == data.itemId)
+                    .reduce((sum, entry) => sum + parseFloat(entry.quantity), 0);
+
+                const inputQty = parseFloat(data.quantity);
+                const increment = inputQty - executedQty;
+
+                if (increment > 0) {
+                    p.progressEntries.push({
+                        itemId: data.itemId,
+                        quantity: increment,
+                        date: new Date().toISOString(),
+                        registeredBy: this.currentUser ? `${this.currentUser.name} ${this.currentUser.lastName}` : 'Sistema'
+                    });
+
+                    const btn = e.target.querySelector('button[type="submit"]');
+                    const origText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                    btn.disabled = true;
+
+                    try {
+                        await this.saveProjectState(p);
+                        document.getElementById('global-modal').style.display = 'none';
+                        this.render();
+                    } catch (err) {
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    }
+                } else {
+                    alert('Error: La cantidad acumulada debe ser estrictamente mayor al avance histórico de ' + executedQty + '.');
+                }
             }
 
             if (e.target.id === 'edp-generation-form') {
