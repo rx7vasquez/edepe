@@ -23,7 +23,10 @@ function authenticateToken(req, res, next) {
 function requireRole(roles) {
     return (req, res, next) => {
         if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'No tienes permisos para realizar esta acción.' });
+            console.log(`[AUTH DEBUG] Rejection! User Role: "${req.user?.role}", Allowed: ${JSON.stringify(roles)}`);
+            return res.status(403).json({
+                error: `No tienes permisos para realizar esta acción. (Rol: ${req.user?.role || 'Ninguno'})`
+            });
         }
         next();
     };

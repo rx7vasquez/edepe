@@ -42,6 +42,7 @@ function mapDBToProject(row) {
 
 function mapProjectToDBParams(p) {
     const annexes = p.annexes || {};
+    console.log("MAPPING PARAMS:", { annexes: p.annexes, retentionParsed: parseFloat(annexes.retentionRate) });
 
     let clientIdParam = null;
     let clientNameParam = null;

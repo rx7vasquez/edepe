@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(adminPassword, salt);
 
-        const insertUser = `INSERT INTO users (company_id, name, lastName, email, password_hash, role, is_active) VALUES ($1, $2, $3, $4, $5, 'Admin Cliente', ${IS_POSTGRES ? 'true' : '1'}) ${IS_POSTGRES ? 'RETURNING id' : ''}`;
+        const insertUser = `INSERT INTO users (company_id, name, lastName, email, password_hash, role, is_active) VALUES ($1, $2, $3, $4, $5, 'Administrador', ${IS_POSTGRES ? 'true' : '1'}) ${IS_POSTGRES ? 'RETURNING id' : ''}`;
         await query(insertUser, [companyId, adminName, adminLastName, adminEmail, passwordHash]);
 
         res.status(201).json({ message: 'Empresa y usuario administrador creados exitosamente' });

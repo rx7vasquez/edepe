@@ -131,7 +131,8 @@
     async saveUserState(u) {
         if (!u) return;
         try {
-            if (u.id && typeof u.id === 'number') {
+            const isExisting = u.id && !isNaN(u.id) && typeof u.id !== 'boolean';
+            if (isExisting) {
                 await ProjectApiService.updateUser(u.id, u);
             } else {
                 const res = await ProjectApiService.createUser({ ...u, tempPassword: u.password || 'temporal123' });
@@ -139,7 +140,7 @@
             }
         } catch (e) {
             console.error(e);
-            alert("Error guardando usuario. Quizás el correo ya esté en uso o la contraseña no es válida.");
+            alert(`Error guardando usuario: ${e.message || "Error desconocido"}`);
         }
     },
 
@@ -218,7 +219,7 @@
             'avances': () => RenderEngine.avances(filteredProjects, this.currentProjectId),
             'projections': () => RenderEngine.projections(filteredProjects),
             'clients': () => RenderEngine.clients(this.clients),
-            'usuarios': () => RenderEngine.usuarios(this.users, this.projects, this.userSearchTerm, this.userRoleFilter),
+            'usuarios': () => RenderEngine.usuarios(this.users, this.projects, this.userSearchTerm, this.userRoleFilter, this.currentUser),
             'companies': () => RenderEngine.companies(this.companies || []),
             'mantenedor-reajuste': () => RenderEngine['mantenedor-reajuste']({
                 polinomioIndices: this.polinomioIndices || [],
@@ -341,18 +342,26 @@
             }
 
             if (target.id === 'btn-nuevo-usuario') { this.showModal('user'); return; }
-            if (target.classList.contains('btn-edit-user')) {
-                const u = this.users.find(user => user.id === target.dataset.userId);
-                this.showModal('user', u);
-                return;
-            }
-            if (target.classList.contains('btn-assign-projects')) {
-                const u = this.users.find(user => user.id === target.dataset.userId);
+
+            // Precise button detection using both matches and closest as fallback
+            const btnEdit = target.closest('.btn-edit-user');
+            const btnAssign = target.closest('.btn-assign-projects');
+            const btnDelete = target.closest('.btn-delete-user');
+
+            if (btnAssign) {
+                const u = this.users.find(user => user.id == btnAssign.dataset.userId);
                 this.showModal('assign-projects', u);
                 return;
             }
-            if (target.classList.contains('btn-delete-user')) {
-                const u = this.users.find(user => user.id === target.dataset.userId);
+
+            if (btnEdit) {
+                const u = this.users.find(user => user.id == btnEdit.dataset.userId);
+                this.showModal('user', u);
+                return;
+            }
+
+            if (btnDelete) {
+                const u = this.users.find(user => user.id == btnDelete.dataset.userId);
                 this.showModal('confirm', {
                     title: 'Eliminar Usuario',
                     message: `¿Está seguro de que desea eliminar a ${u.name} ${u.lastName}?`,
@@ -561,6 +570,29 @@
                 const edpNum = parseInt(target.dataset.edpNumber);
                 const edp = p.edps.find(e => e.number === edpNum);
                 this.showModal('edp-detail', { project: p, edp: edp });
+                return;
+            }
+            if (target.classList.contains('btn-delete-edp')) {
+                const pid = Number(target.dataset.projectId);
+                const p = this.projects.find(pj => pj.id == pid);
+                const edpNum = parseInt(target.dataset.edpNumber);
+
+                // Security check redundancy (already filtered in UI)
+                const lastEdp = p.edps[p.edps.length - 1];
+                if (!lastEdp || lastEdp.number !== edpNum) {
+                    alert("Solo se puede eliminar el último Estado de Pago emitido.");
+                    return;
+                }
+
+                this.showModal('confirm', {
+                    title: 'Eliminar Estado de Pago',
+                    message: `¿Está seguro de que desea eliminar el EDP N° ${edpNum}? Esta acción no se puede deshacer y ajustará los acumulados del proyecto.`,
+                    onConfirm: async () => {
+                        p.edps.pop(); // Remove the last one
+                        await this.saveProjectState(p);
+                        this.render();
+                    }
+                });
                 return;
             }
             if (target.classList.contains('btn-edit-item')) {
@@ -850,21 +882,35 @@
             }
 
             if (e.target.id === 'user-form') {
+                let u;
                 if (data.userId) {
-                    const u = this.users.find(user => user.id === data.userId);
-                    Object.assign(u, data);
-                    if (data.password) u.password = data.password;
-                } else this.users.push(new User(data));
-                this.saveUserState(u);
-                document.getElementById('global-modal').style.display = 'none';
-                this.render();
+                    u = this.users.find(user => user.id == data.userId);
+                    if (u) {
+                        Object.assign(u, data);
+                        if (data.password) u.password = data.password;
+                    }
+                } else {
+                    u = new User(data);
+                    this.users.push(u);
+                }
+
+                if (u) {
+                    this.saveUserState(u);
+                    document.getElementById('global-modal').style.display = 'none';
+                    this.render();
+                } else {
+                    console.error("No se pudo identificar o crear el usuario.");
+                }
             }
 
             if (e.target.id === 'assign-projects-form') {
-                const u = this.users.find(user => user.id === data.userId);
+                const u = this.users.find(user => user.id == data.userId);
                 const assigned = [];
-                e.target.querySelectorAll('input[name="projects"]:checked').forEach(cb => assigned.push(cb.value));
-                u.assignedProjects = assigned;
+                e.target.querySelectorAll('input[name="projectIds"]:checked').forEach(cb => {
+                    const val = cb.value;
+                    assigned.push(!isNaN(val) ? Number(val) : val);
+                });
+                u.assignedProjectIds = assigned;
                 this.saveUserState(u);
                 document.getElementById('global-modal').style.display = 'none';
                 this.render();
@@ -1101,6 +1147,7 @@
                 let ret = 0;
                 let items = [];
                 let r = 0; // Se calculará abajo si aplica
+                let rPct = 0; // Factor porcentual de reajuste
 
                 if (type === 'Avance de Obra') {
                     for (const [k, v] of Object.entries(data)) {
@@ -1145,8 +1192,9 @@
                             }
 
                             const baseIndice = parseFloat(p.annexes.reajusteIndex || 100);
-                            const factorVariacion = Math.max(0, (indiceData.valor - baseIndice) / baseIndice);
+                            const factorVariacion = (indiceData.valor - baseIndice) / baseIndice;
                             r = val * factorVariacion;
+                            rPct = factorVariacion;
                         } catch (err) {
                             alert(err.message);
                             if (btnSubmit) {
@@ -1180,8 +1228,9 @@
 
                             // Factor MOP simplificado = Indice Mes Cobro / Indice Mes Presupuesto
                             const baseIndice = parseFloat(p.annexes.reajusteIndex || 100);
-                            const factorVariacion = Math.max(0, (indiceData.indice - baseIndice) / baseIndice);
+                            const factorVariacion = (indiceData.indice - baseIndice) / baseIndice;
                             r = val * factorVariacion; // Reajuste
+                            rPct = factorVariacion;
 
                         } catch (err) {
                             alert(err.message);
@@ -1224,6 +1273,7 @@
                     items,
                     workValue: val,
                     reajuste: r,
+                    reajustePct: rPct,
                     retention: ret,
                     net: val - ret + r
                 });
@@ -1255,6 +1305,8 @@
         const secDevolucion = document.getElementById('section-devolucion');
         const retRow = document.getElementById('retention-row');
         const retInfo = document.getElementById('retention-info');
+        const dateInp = document.querySelector('input[name="date"]');
+        let currentReajusteFactor = 0; // State for real-time percentage display
 
         if (!typeSelector) return;
 
@@ -1262,7 +1314,7 @@
             const type = typeSelector.value;
             let totalBruto = 0;
             let retention = 0;
-            const reajuste = 0; // Calculado en el servidor/handler async al generar el pago
+            const reajuste = totalBruto * currentReajusteFactor; // Simplified display estimate
 
             if (type === 'Avance de Obra') {
                 document.querySelectorAll('.edp-item-input').forEach(inp => {
@@ -1293,12 +1345,19 @@
             document.getElementById('edp-total-retention').textContent = '-' + formatCurrency(retention, p.currency);
             if (reajusteEl) {
                 if (type === 'Avance de Obra' && p.currency !== 'UF' && p.annexes.tipoReajuste !== 'Ninguno') {
-                    reajusteEl.innerHTML = '<span style="font-size:0.8rem; font-style:italic;">(Calculado al emitir)</span>';
+                    const rValue = totalBruto * currentReajusteFactor;
+                    reajusteEl.textContent = formatCurrency(rValue, p.currency);
+                    const pctEl = document.getElementById('edp-reajuste-factor-pct');
+                    if (pctEl) pctEl.textContent = `(Factor: ${(currentReajusteFactor * 100).toFixed(2)}%)`;
                 } else {
-                    reajusteEl.textContent = formatCurrency(reajuste, p.currency);
+                    reajusteEl.textContent = formatCurrency(0, p.currency);
+                    const pctEl = document.getElementById('edp-reajuste-factor-pct');
+                    if (pctEl) pctEl.textContent = '';
                 }
             }
-            document.getElementById('edp-total-liquido').textContent = formatCurrency(liquido, p.currency);
+
+            const liquidVal = totalBruto - retention + (type === 'Avance de Obra' ? (totalBruto * currentReajusteFactor) : 0);
+            document.getElementById('edp-total-liquido').textContent = formatCurrency(liquidVal, p.currency);
 
             if (btn) btn.disabled = (totalBruto <= 0 && type !== 'Avance de Obra');
         };
@@ -1326,6 +1385,44 @@
         const returnInp = document.querySelector('input[name="returnAmount"]');
         if (advanceInp) advanceInp.addEventListener('input', updateTotals);
         if (returnInp) returnInp.addEventListener('input', updateTotals);
+
+        const fetchReajuste = async () => {
+            if (!dateInp) return;
+            const dStr = dateInp.value;
+            if (!dStr) return;
+
+            const edpDate = new Date(dStr + 'T12:00:00');
+            const priorMonth = new Date(edpDate.getFullYear(), edpDate.getMonth() - 1, 1);
+            const mes = priorMonth.getMonth() + 1;
+            const anio = priorMonth.getFullYear();
+
+            try {
+                const tipo = p.currency === 'UF' ? 'Ninguno' : (p.annexes.tipoReajuste || 'Polinomio');
+                const baseIndice = parseFloat(p.annexes.reajusteIndex || 100);
+
+                if (tipo === 'Polinomio') {
+                    const idx = await PolinomioApiService.getExactIndex(mes, anio, p.annexes.tipo_obra, p.annexes.subtipo_obra);
+                    if (idx) currentReajusteFactor = (idx.indice - baseIndice) / baseIndice;
+                    else currentReajusteFactor = 0;
+                } else if (tipo === 'IPC') {
+                    const idx = await IpcApiService.getExactIndex(mes, anio);
+                    if (idx) currentReajusteFactor = (idx.valor - baseIndice) / baseIndice;
+                    else currentReajusteFactor = 0;
+                } else {
+                    currentReajusteFactor = 0;
+                }
+                updateTotals();
+            } catch (err) {
+                console.warn("Error fetching reajuste during preview", err);
+                currentReajusteFactor = 0;
+                updateTotals();
+            }
+        };
+
+        if (dateInp) {
+            dateInp.addEventListener('change', fetchReajuste);
+            fetchReajuste(); // Initial fetch
+        }
 
         updateTotals();
     },

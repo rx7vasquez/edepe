@@ -9,7 +9,7 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const rawUsers = await query(
-            'SELECT id, name, lastName, email, role, avatar, is_active, assignedProjectIds FROM users WHERE company_id = $1',
+            'SELECT id, name, lastName, email, role, position, avatar, is_active, assignedProjectIds FROM users WHERE company_id = $1',
             [req.user.companyId]
         );
         const mappedUsers = rawUsers.map(u => ({
@@ -18,9 +18,10 @@ router.get('/', async (req, res) => {
             lastName: u.lastname || u.lastName || '',
             email: u.email,
             role: u.role,
+            position: u.position || '',
             avatar: u.avatar,
             is_active: u.is_active,
-            assignedProjectIds: u.assignedprojectids || u.assignedProjectIds || '[]'
+            assignedProjectIds: JSON.parse(u.assignedprojectids || u.assignedProjectIds || '[]')
         }));
         res.json(mappedUsers);
     } catch (error) {
@@ -30,8 +31,8 @@ router.get('/', async (req, res) => {
 });
 
 // POST create new user in company (Only Admin Cliente)
-router.post('/', requireRole(['Admin Cliente']), async (req, res) => {
-    const { name, lastName, email, tempPassword, role, assignedProjectIds } = req.body;
+router.post('/', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
+    const { name, lastName, email, tempPassword, role, position, assignedProjectIds } = req.body;
     try {
         const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
         if (existing.length > 0) return res.status(400).json({ error: 'Email already exists' });
@@ -41,11 +42,11 @@ router.post('/', requireRole(['Admin Cliente']), async (req, res) => {
         const hash = await bcrypt.hash(tempPassword || 'temporal123', salt);
 
         const sql = `
-            INSERT INTO users (company_id, name, lastName, email, password_hash, role, assignedProjectIds) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) ${IS_POSTGRES ? 'RETURNING id' : ''}
+            INSERT INTO users (company_id, name, lastName, email, password_hash, role, position, assignedProjectIds) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ${IS_POSTGRES ? 'RETURNING id' : ''}
         `;
         const params = [
-            req.user.companyId, name, lastName, email, hash, role || 'Usuario Normal', JSON.stringify(assignedProjectIds || [])
+            req.user.companyId, name, lastName, email, hash, role || 'Usuario Normal', position || '', JSON.stringify(assignedProjectIds || [])
         ];
 
         const result = await query(sql, params);
@@ -56,15 +57,25 @@ router.post('/', requireRole(['Admin Cliente']), async (req, res) => {
     }
 });
 
-// PUT update user (role, active status, assigned projects)
-router.put('/:id', requireRole(['Admin Cliente']), async (req, res) => {
-    const { role, is_active, assignedProjectIds } = req.body;
+// PUT update user (role, active status, assigned projects, and basic info)
+router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
+    const { name, lastName, email, role, position, is_active, assignedProjectIds } = req.body;
     try {
         const sql = `
-            UPDATE users SET role = $1, is_active = $2, assignedProjectIds = $3
-            WHERE id = $4 AND company_id = $5
+            UPDATE users SET name = $1, lastName = $2, email = $3, role = $4, position = $5, is_active = $6, assignedProjectIds = $7
+            WHERE id = $8 AND company_id = $9
         `;
-        await query(sql, [role, is_active ? 1 : 0, JSON.stringify(assignedProjectIds || []), req.params.id, req.user.companyId]);
+        await query(sql, [
+            name,
+            lastName,
+            email,
+            role,
+            position || '',
+            is_active !== undefined ? (is_active ? 1 : 0) : 1,
+            JSON.stringify(assignedProjectIds || []),
+            req.params.id,
+            req.user.companyId
+        ]);
         res.json({ message: 'User updated' });
     } catch (error) {
         console.error('Error updating user:', error);
@@ -73,7 +84,7 @@ router.put('/:id', requireRole(['Admin Cliente']), async (req, res) => {
 });
 
 // DELETE User (Optional, could just set is_active=0)
-router.delete('/:id', requireRole(['Admin Cliente']), async (req, res) => {
+router.delete('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         await query('DELETE FROM users WHERE id = $1 AND company_id = $2', [req.params.id, req.user.companyId]);
         res.json({ message: 'User deleted' });

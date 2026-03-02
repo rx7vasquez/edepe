@@ -51,9 +51,13 @@ async function query(sql, params = []) {
         // Reemplaza $1, $2... por ? si alguien usó notación PG
         const sqliteSQL = sql.replace(/\$\d+/g, '?');
         const stmt = sqliteDb.prepare(sqliteSQL);
-        // Determinar si es SELECT o una mutación
         const trimmed = sql.trim().toUpperCase();
-        if (trimmed.startsWith('SELECT')) {
+
+        // SELECT and some PRAGMAs return results.
+        // PRAGMA foreign_keys = OFF does NOT return results and needs run().
+        const isQuery = trimmed.startsWith('SELECT') || (trimmed.startsWith('PRAGMA') && !sql.includes('='));
+
+        if (isQuery) {
             return stmt.all(...params);
         } else {
             const result = stmt.run(...params);
@@ -111,6 +115,7 @@ async function initDb() {
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'Usuario Normal',
+            position TEXT,
             assignedProjectIds TEXT DEFAULT '[]',
             avatar TEXT,
             is_active ${IS_POSTGRES ? 'BOOLEAN DEFAULT true' : 'INTEGER DEFAULT 1'},
@@ -165,14 +170,14 @@ async function initDb() {
     await query(createClients);
     await query(createProjects);
 
-    // Add extra_data column seamlessly if it doesn't exist
+    // Add extra_data column to projects seamlessly if it doesn't exist
     try {
-        if (IS_POSTGRES) {
-            await query('ALTER TABLE projects ADD COLUMN extra_data TEXT;');
-        } else {
-            // SQLite ignores errors on ALTER if we just catch it
-            await query('ALTER TABLE projects ADD COLUMN extra_data TEXT;');
-        }
+        await query('ALTER TABLE projects ADD COLUMN extra_data TEXT;');
+    } catch (e) { /* Column likely exists */ }
+
+    // Add position column to users seamlessly if it doesn't exist
+    try {
+        await query('ALTER TABLE users ADD COLUMN position TEXT;');
     } catch (e) { /* Column likely exists */ }
 
     console.log('✅ Base de datos SaaS inicializada.');

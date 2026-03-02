@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db/database');
+const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 const IPCScraperService = require('../services/IPCScraperService');
+
+router.use(authenticateToken);
 
 // GET /api/ipc
 router.get('/', async (req, res) => {
@@ -23,7 +26,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/ipc/seed
-router.post('/seed', async (req, res) => {
+router.post('/seed', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const result = await IPCScraperService.seedDatabase();
         res.json({ success: true, message: `Se actualizaron ${result.count} índices IPC.` });
@@ -33,7 +36,7 @@ router.post('/seed', async (req, res) => {
 });
 
 // POST /api/ipc
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const { anio, mes, valor, variacion_mensual } = req.body;
         const rows = await query(
@@ -48,7 +51,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/ipc/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const { valor, variacion_mensual } = req.body;
         await query(

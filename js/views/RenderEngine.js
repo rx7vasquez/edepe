@@ -348,13 +348,27 @@ const RenderEngine = {
                                 <td><span class="status-badge" style="background:var(--primary); color:white;">${e.type || 'Avance de Obra'}</span></td>
                                 <td>${new Date(e.date).toLocaleDateString()}</td>
                                 <td>${this.formatCurrency(e.workValue, e.currency)}</td>
-                                ${e.currency === 'UF' ? '<td>-</td>' : `<td style="color:${(e.reajuste || 0) >= 0 ? 'var(--primary)' : 'var(--danger)'}">${this.formatCurrency(e.reajuste || 0, e.currency)}</td>`}
+                                ${e.currency === 'UF' ? '<td>-</td>' : `
+                                <td style="color:${(e.reajuste || 0) >= 0 ? 'var(--primary)' : 'var(--danger)'}">
+                                    ${this.formatCurrency(e.reajuste || 0, e.currency)}
+                                    ${e.reajustePct ? `<br><small style="color:var(--text-muted); font-weight:normal;">(${(e.reajustePct * 100).toFixed(2)}%)</small>` : ''}
+                                </td>`}
                                 <td style="color:var(--accent)">-${this.formatCurrency(e.retention || 0, e.currency)}</td>
                                 <td style="font-weight:bold; color:var(--text-main);">${this.formatCurrency(e.net, e.currency)}</td>
                                 <td>
-                                    <button class="btn-icon btn-view-edp" data-project-id="${e.projectId}" data-edp-number="${e.number}" title="Ver Detalle Ítemizado">
-                                        <i class="fas fa-search-dollar"></i>
-                                    </button>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="btn-icon btn-view-edp" data-project-id="${e.projectId}" data-edp-number="${e.number}" title="Ver Detalle Ítemizado">
+                                            <i class="fas fa-search-dollar"></i>
+                                        </button>
+                                        ${(() => {
+                const proj = pjs.find(p => p.id == e.projectId);
+                const isLatest = proj && proj.edps.length > 0 && proj.edps[proj.edps.length - 1].number === e.number;
+                return isLatest ? `
+                                            <button class="btn-icon btn-delete-edp" data-project-id="${e.projectId}" data-edp-number="${e.number}" title="Eliminar este EDP" style="color:var(--danger);">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>` : '';
+            })()}
+                                    </div>
                                 </td>
                             </tr>`).join('') : '<tr><td colspan="9" style="text-align:center; padding:30px;">No hay estados de pago generados para esta selección.</td></tr>'}
                     </tbody>
@@ -868,7 +882,7 @@ const RenderEngine = {
         </div>`;
     },
 
-    usuarios(users, projects, searchTerm = '', roleFilter = 'Todos') {
+    usuarios(users, projects, searchTerm = '', roleFilter = 'Todos', currentUser) {
         const filteredUsers = users.filter(u => {
             const matchesSearch = `${u.name} ${u.lastName} ${u.email}`.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesRole = roleFilter === 'Todos' || u.role === roleFilter;
@@ -948,7 +962,7 @@ const RenderEngine = {
                                         <div style="display:flex; gap:10px; justify-content:flex-end;">
                                             <button class="btn-icon btn-assign-projects" data-user-id="${u.id}" title="Asignar Proyectos"><i class="fas fa-link"></i></button>
                                             <button class="btn-icon btn-edit-user" data-user-id="${u.id}" title="Editar" style="color:var(--primary);"><i class="fas fa-edit"></i></button>
-                                            ${u.role !== 'Administrador' ? `
+                                            ${u.id != currentUser.id ? `
                                                 <button class="btn-icon btn-delete-user" data-user-id="${u.id}" title="Eliminar" style="color:var(--danger);"><i class="fas fa-trash-alt"></i></button>
                                             ` : ''}
                                         </div>
@@ -1261,7 +1275,7 @@ const RenderEngine = {
             <div style="max-height:300px; overflow-y:auto; margin-bottom:20px;">
                 ${projects.map(p => `
                     <label style="display:flex; align-items:center; gap:10px; padding:10px; margin-bottom:5px; background:rgba(255,255,255,0.02); border-radius:5px; cursor:pointer;">
-                        <input type="checkbox" name="projectIds" value="${p.id}" ${user.assignedProjectIds.includes(p.id) ? 'checked' : ''}>
+                        <input type="checkbox" name="projectIds" value="${p.id}" ${user.assignedProjectIds.some(aid => aid == p.id) ? 'checked' : ''}>
                         <span><b>${p.contractId}</b>: ${p.name}</span>
                     </label>`).join('')}
             </div>
@@ -1662,7 +1676,7 @@ const RenderEngine = {
                         
                         ${p.currency === 'UF' ? '' : `
                         <div class="edp-summary-row">
-                            <span>Reajuste:</span>
+                            <span>Reajuste <small id="edp-reajuste-factor-pct" style="font-weight:normal; color:var(--text-muted); margin-left:5px;"></small>:</span>
                             <strong id="edp-total-reajuste" style="color:var(--primary);">${this.formatCurrency(0, p.currency)}</strong>
                         </div>`}
                         

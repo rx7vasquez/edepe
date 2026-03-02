@@ -1,6 +1,6 @@
 const express = require('express');
 const { query, IS_POSTGRES } = require('../db/database');
-const { authenticateToken } = require('../middlewares/authMiddleware');
+const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST create client
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     const c = req.body;
     try {
         const sql = `
@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT update
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     const c = req.body;
     try {
         const sql = `
@@ -50,7 +50,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         await query('DELETE FROM clients WHERE id=$1 AND company_id=$2', [req.params.id, req.user.companyId]);
         res.json({ message: 'Cliente eliminado' });

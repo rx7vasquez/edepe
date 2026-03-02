@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        const insertUser = `INSERT INTO users (company_id, name, lastName, email, password_hash, role) VALUES ($1, $2, $3, $4, $5, 'Admin Cliente') ${IS_POSTGRES ? 'RETURNING id' : ''}`;
+        const insertUser = `INSERT INTO users (company_id, name, lastName, email, password_hash, role) VALUES ($1, $2, $3, $4, $5, 'Administrador') ${IS_POSTGRES ? 'RETURNING id' : ''}`;
         await query(insertUser, [companyId, userName, lastName, email, passwordHash]);
 
         res.status(201).json({ message: 'Registro exitoso. Tu cuenta está pendiente de aprobación.' });

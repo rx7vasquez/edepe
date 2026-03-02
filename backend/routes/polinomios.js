@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../db/database');
+const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 const PolinomioScraperService = require('../services/PolinomioScraperService');
+
+router.use(authenticateToken);
 
 // GET /api/polinomios
 router.get('/', async (req, res) => {
@@ -26,7 +29,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/polinomios/seed
-router.post('/seed', async (req, res) => {
+router.post('/seed', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const result = await PolinomioScraperService.seedDatabase();
         res.json({ message: 'Scraping completado', result });
@@ -36,7 +39,7 @@ router.post('/seed', async (req, res) => {
 });
 
 // POST /api/polinomios
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const { anio, mes, tipo_obra, subtipo_obra, indice, datos_extra } = req.body;
         if (!anio || !mes || !tipo_obra || !subtipo_obra || !indice) {
@@ -57,7 +60,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/polinomios/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
         const { id } = req.params;
         const { indice, tipo_obra, subtipo_obra, datos_extra } = req.body;
