@@ -1058,7 +1058,8 @@
             }
 
             if (e.target.id === 'progress-form') {
-                const p = this.projects.find(pj => pj.id == this.currentProjectId);
+                const targetId = data.projectId || this.currentProjectId;
+                const p = this.projects.find(pj => pj.id == targetId);
                 if (!p) { alert('Error: Proyecto no encontrado en memoria.'); return; }
                 const executedQty = (p.progressEntries || [])
                     .filter(entry => entry.itemId == data.itemId)
@@ -1404,6 +1405,7 @@
                 return `
                 <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><h2>Añadir Avance</h2><button class="btn-close-modal" style="background:none; border:none; color:var(--text-muted); font-size:24px; cursor:pointer;">&times;</button></div>
                 <form id="progress-form" class="mop-form">
+                    <input type="hidden" name="projectId" value="${data.project.id}">
                     <input type="hidden" name="itemId" value="${data.itemId}">
                     ${infoCard}
                     <div class="full-width">
