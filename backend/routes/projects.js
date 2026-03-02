@@ -26,8 +26,8 @@ function mapDBToProject(row) {
         edps: JSON.parse(row.edps || '[]'),
         currency: row.moneda || 'CLP',
         annexes: {
-            retentionRate: row.retention_porcentaje !== null ? row.retention_porcentaje : 0.10,
-            retentionCapRate: row.retention_tope !== null ? row.retention_tope : 0.05,
+            retentionRate: row.retencion_porcentaje != null ? parseFloat(row.retencion_porcentaje) : 0.10,
+            retentionCapRate: row.retencion_tope != null ? parseFloat(row.retencion_tope) : 0.05,
             advanceTotal: row.anticipo_porcentaje || 0,
             tipo_obra: row.tipo_obra || '',
             subtipo_obra: row.subtipo_obra || '',
