@@ -1322,11 +1322,8 @@
             });
         });
 
-        const reajusteInp = document.querySelector('input[name="reajuste"]');
         const advanceInp = document.querySelector('input[name="advanceAmount"]');
         const returnInp = document.querySelector('input[name="returnAmount"]');
-
-        if (reajusteInp) reajusteInp.addEventListener('input', updateTotals);
         if (advanceInp) advanceInp.addEventListener('input', updateTotals);
         if (returnInp) returnInp.addEventListener('input', updateTotals);
 
