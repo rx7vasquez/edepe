@@ -806,7 +806,7 @@ const App = {
             }
 
             if (e.target.id === 'contract-modification-form') {
-                const p = this.projects.find(pj => pj.id === data.projectId);
+                const p = this.projects.find(pj => pj.id == data.projectId);
                 if (p) {
                     p.contractModifications.push({
                         number: parseInt(data.modNumber),
