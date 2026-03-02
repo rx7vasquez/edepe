@@ -12,7 +12,11 @@ router.get('/', async (req, res) => {
             'SELECT id, name, lastName, email, role, position, avatar, is_active, assignedProjectIds FROM users WHERE company_id = $1',
             [req.user.companyId]
         );
-        const mappedUsers = rawUsers.map(u => ({
+        const filteredUsers = req.user.role === 'SysAdmin'
+            ? rawUsers
+            : rawUsers.filter(u => u.role !== 'SysAdmin');
+
+        const mappedUsers = filteredUsers.map(u => ({
             id: u.id,
             name: u.name,
             lastName: u.lastname || u.lastName || '',
@@ -61,6 +65,12 @@ router.post('/', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), as
 router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     const { name, lastName, email, role, position, is_active, assignedProjectIds } = req.body;
     try {
+        // Prevention: Non-SysAdmin cannot target a SysAdmin
+        const target = await query('SELECT role FROM users WHERE id = $1', [req.params.id]);
+        if (target.length > 0 && target[0].role === 'SysAdmin' && req.user.role !== 'SysAdmin') {
+            return res.status(403).json({ error: 'No tienes permisos para modificar a un Super Administrador.' });
+        }
+
         const sql = `
             UPDATE users SET name = $1, lastName = $2, email = $3, role = $4, position = $5, is_active = $6, assignedProjectIds = $7
             WHERE id = $8 AND company_id = $9
@@ -86,6 +96,12 @@ router.put('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), 
 // DELETE User (Optional, could just set is_active=0)
 router.delete('/:id', requireRole(['Admin Cliente', 'Administrador', 'SysAdmin']), async (req, res) => {
     try {
+        // Prevention: Non-SysAdmin cannot target a SysAdmin
+        const target = await query('SELECT role FROM users WHERE id = $1', [req.params.id]);
+        if (target.length > 0 && target[0].role === 'SysAdmin' && req.user.role !== 'SysAdmin') {
+            return res.status(403).json({ error: 'No tienes permisos para eliminar a un Super Administrador.' });
+        }
+
         await query('DELETE FROM users WHERE id = $1 AND company_id = $2', [req.params.id, req.user.companyId]);
         res.json({ message: 'User deleted' });
     } catch (error) {

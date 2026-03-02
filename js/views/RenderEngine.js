@@ -961,9 +961,12 @@ const RenderEngine = {
                                     <td>
                                         <div style="display:flex; gap:10px; justify-content:flex-end;">
                                             <button class="btn-icon btn-assign-projects" data-user-id="${u.id}" title="Asignar Proyectos"><i class="fas fa-link"></i></button>
-                                            <button class="btn-icon btn-edit-user" data-user-id="${u.id}" title="Editar" style="color:var(--primary);"><i class="fas fa-edit"></i></button>
-                                            ${u.id != currentUser.id ? `
-                                                <button class="btn-icon btn-delete-user" data-user-id="${u.id}" title="Eliminar" style="color:var(--danger);"><i class="fas fa-trash-alt"></i></button>
+                                            
+                                            ${(u.role !== 'SysAdmin' || currentUser.role === 'SysAdmin') ? `
+                                                <button class="btn-icon btn-edit-user" data-user-id="${u.id}" title="Editar" style="color:var(--primary);"><i class="fas fa-edit"></i></button>
+                                                ${u.id != currentUser.id ? `
+                                                    <button class="btn-icon btn-delete-user" data-user-id="${u.id}" title="Eliminar" style="color:var(--danger);"><i class="fas fa-trash-alt"></i></button>
+                                                ` : ''}
                                             ` : ''}
                                         </div>
                                     </td>
