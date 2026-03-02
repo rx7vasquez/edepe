@@ -1,4 +1,4 @@
-const App = {
+﻿const App = {
     projects: [],
     clients: [],
     users: [],
@@ -970,7 +970,7 @@ const App = {
             }
 
             if (e.target.id === 'edit-project-form') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 Object.assign(p, data);
                 // Ensure annexes are updated with retention rates and polinomios
                 p.annexes.retentionRate = parseFloat(data.retentionRate);
@@ -991,7 +991,7 @@ const App = {
                 btn.disabled = true;
 
                 try {
-                    const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                    const p = this.projects.find(pj => pj.id == this.currentProjectId);
                     const newItem = {
                         id: data.itemId,
                         name: data.name,
@@ -1014,7 +1014,7 @@ const App = {
             }
 
             if (e.target.id === 'edit-item-form') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 const index = p.items.findIndex(i => i.id === data.oldItemId);
                 if (index !== -1) {
                     const newQty = parseFloat(data.quantity);
@@ -1058,7 +1058,7 @@ const App = {
             }
 
             if (e.target.id === 'progress-form') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 p.progressEntries.push({
                     itemId: data.itemId,
                     quantity: parseFloat(data.quantity),
@@ -1071,7 +1071,7 @@ const App = {
             }
 
             if (e.target.id === 'edp-generation-form') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 const type = data.type;
                 let val = 0;
                 let ret = 0;
@@ -1209,7 +1209,7 @@ const App = {
     },
 
     handleGenerateEDP() {
-        const p = this.projects.find(pj => pj.id === this.currentProjectId);
+        const p = this.projects.find(pj => pj.id == this.currentProjectId);
         if (!p) return alert("Seleccione un proyecto para generar un Estado de Pago.");
         this.currentView = 'edp-generation';
         this.render();
@@ -1323,7 +1323,7 @@ const App = {
             'client': () => RenderEngine['client-form'](),
             'edit-client': () => RenderEngine['client-form'](data),
             'item': () => {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 const hasBaseline = p && p.hasBaseline();
                 const typeSelector = hasBaseline ? `
                     <div class="full-width" style="margin-bottom:10px; padding:14px; border-radius:10px; border:1px solid rgba(245,158,11,0.4); background:rgba(245,158,11,0.06);">
