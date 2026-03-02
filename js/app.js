@@ -233,8 +233,8 @@ const App = {
                 hasRetention: this.financialFilterRetention
             }),
             'detalles': () => {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
-                return RenderEngine.details(p);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
+                return p ? RenderEngine.details(p) : `<div class="view active"><h1>Proyecto no encontrado</h1></div>`;
             },
             'project-form': () => {
                 if (!this.clients || this.clients.length === 0) {
@@ -245,7 +245,7 @@ const App = {
                 return RenderEngine['project-form'](this.clients);
             },
             'edp-generation': () => {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 return p ? RenderEngine.edpGenerationView(p) : `<div class="view active"><h1>Error: Proyecto no encontrado para facturar</h1></div>`;
             }
         };
@@ -295,7 +295,7 @@ const App = {
                 }
 
                 this.currentView = viewAttr;
-                this.currentProjectId = target.dataset.projectId || null;
+                this.currentProjectId = target.dataset.projectId ? Number(target.dataset.projectId) : null;
                 this.render();
                 return;
             }
@@ -325,7 +325,7 @@ const App = {
 
             if (target.classList.contains('project-card')) {
                 if (e.target.closest('button')) return;
-                this.currentProjectId = target.dataset.projectId;
+                this.currentProjectId = Number(target.dataset.projectId);
                 this.currentView = 'detalles';
                 this.render();
                 return;
@@ -513,7 +513,7 @@ const App = {
 
             // --- Venta Contractual: Lock Baseline ---
             if (id === 'btn-lock-baseline') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 if (!p || p.items.length === 0) return;
                 this.showModal('confirm', {
                     title: 'Definir Venta Contractual',
@@ -532,15 +532,15 @@ const App = {
 
             // --- Register Modification ---
             if (id === 'btn-register-modification') {
-                const p = this.projects.find(pj => pj.id === this.currentProjectId);
+                const p = this.projects.find(pj => pj.id == this.currentProjectId);
                 if (!p) return;
                 this.showModal('contract-modification', p);
                 return;
             }
             if (target.classList.contains('btn-add-progress')) {
-                const pid = target.dataset.projectId || this.currentProjectId;
-                const p = this.projects.find(pj => pj.id === pid);
-                const item = p.items.find(i => i.id === target.dataset.itemId);
+                const pid = target.dataset.projectId ? Number(target.dataset.projectId) : this.currentProjectId;
+                const p = this.projects.find(pj => pj.id == pid);
+                const item = p.items.find(i => i.id == target.dataset.itemId);
                 const executedQty = (p.progressEntries || [])
                     .filter(e => e.itemId === item.id)
                     .reduce((sum, e) => sum + parseFloat(e.quantity), 0);
@@ -548,24 +548,24 @@ const App = {
                 return;
             }
             if (target.classList.contains('btn-view-history')) {
-                const pid = target.dataset.projectId || this.currentProjectId;
-                const p = this.projects.find(pj => pj.id === pid);
-                const item = p.items.find(i => i.id === target.dataset.itemId);
+                const pid = target.dataset.projectId ? Number(target.dataset.projectId) : this.currentProjectId;
+                const p = this.projects.find(pj => pj.id == pid);
+                const item = p.items.find(i => i.id == target.dataset.itemId);
                 this.showModal('progress-history', { project: p, item: item });
                 return;
             }
             if (target.classList.contains('btn-view-edp')) {
-                const pid = target.dataset.projectId;
-                const p = this.projects.find(pj => pj.id === pid);
+                const pid = Number(target.dataset.projectId);
+                const p = this.projects.find(pj => pj.id == pid);
                 const edpNum = parseInt(target.dataset.edpNumber);
                 const edp = p.edps.find(e => e.number === edpNum);
                 this.showModal('edp-detail', { project: p, edp: edp });
                 return;
             }
             if (target.classList.contains('btn-edit-item')) {
-                const pid = target.dataset.projectId || this.currentProjectId;
-                const p = this.projects.find(pj => pj.id === pid);
-                const item = p.items.find(i => i.id === target.dataset.itemId);
+                const pid = target.dataset.projectId ? Number(target.dataset.projectId) : this.currentProjectId;
+                const p = this.projects.find(pj => pj.id == pid);
+                const item = p.items.find(i => i.id == target.dataset.itemId);
                 const advancedQty = (p.progressEntries || [])
                     .filter(e => e.itemId === item.id)
                     .reduce((sum, e) => sum + parseFloat(e.quantity), 0);
@@ -573,10 +573,10 @@ const App = {
                 return;
             }
             if (target.classList.contains('btn-delete-item')) {
-                const pid = target.dataset.projectId || this.currentProjectId;
-                const p = this.projects.find(pj => pj.id === pid);
-                const item = p.items.find(i => i.id === target.dataset.itemId);
-                const hasProgress = (p.progressEntries || []).some(e => e.itemId === item.id);
+                const pid = target.dataset.projectId ? Number(target.dataset.projectId) : this.currentProjectId;
+                const p = this.projects.find(pj => pj.id == pid);
+                const item = p.items.find(i => i.id == target.dataset.itemId);
+                const hasProgress = (p.progressEntries || []).some(e => e.itemId == item.id);
                 if (hasProgress) {
                     alert(`No se puede eliminar la partida "${item.id}" porque ya tiene avances registrados.`);
                 } else {
@@ -635,7 +635,7 @@ const App = {
                 this.render();
             }
             if (e.target.id === 'avances-project-select' || e.target.id === 'financial-project-select') {
-                this.currentProjectId = e.target.value;
+                this.currentProjectId = e.target.value ? Number(e.target.value) : null;
                 this.render();
             }
             if (e.target.id === 'financial-filter-type') { this.financialFilterType = e.target.value; this.render(); }
@@ -1391,7 +1391,10 @@ const App = {
                 </form>`;
             },
             'edit-item': () => RenderEngine['edit-item-form'](data.item, data.advancedQty, data.project),
-            'edit-project': () => RenderEngine['edit-project-form'](this.projects.find(pj => pj.id === this.currentProjectId), this.clients),
+            'edit-project': () => {
+                const proj = this.projects.find(pj => pj.id == this.currentProjectId);
+                return proj ? RenderEngine['edit-project-form'](proj, this.clients) : '';
+            },
             'progress-history': () => {
                 const history = data.project.progressEntries.filter(e => e.itemId === data.item.id).sort((a, b) => new Date(b.date) - new Date(a.date));
                 return `
