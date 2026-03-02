@@ -28,7 +28,8 @@ const App = {
 
         if (this.currentUser) {
             try {
-                this.projects = await ProjectApiService.getProjects() || [];
+                const rawProjects = await ProjectApiService.getProjects() || [];
+                this.projects = rawProjects.map(p => new Project(p));
                 this.clients = await ProjectApiService.getClients() || [];
                 this.users = await ProjectApiService.getUsers() || [];
 
